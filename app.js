@@ -40,6 +40,23 @@
     if (!shouldShowWarning()) return;
     modalHideCheckbox.checked = false;
     modal.classList.add('show');
+
+    // Disable confirmation button for 4 seconds
+    var secondsLeft = 4;
+    modalCloseBtn.disabled = true;
+    var originalText = "확인했습니다";
+    modalCloseBtn.textContent = originalText + " (" + secondsLeft + ")";
+
+    var timer = setInterval(function() {
+      secondsLeft--;
+      if (secondsLeft > 0) {
+        modalCloseBtn.textContent = originalText + " (" + secondsLeft + ")";
+      } else {
+        clearInterval(timer);
+        modalCloseBtn.disabled = false;
+        modalCloseBtn.textContent = originalText;
+      }
+    }, 1000);
   }
 
   modalCloseBtn.addEventListener('click', hideWarningModal);
