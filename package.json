@@ -10,5 +10,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/minigu5/latex-to-hwp.git"
+  },
+  "dependencies": {
+    "@vercel/analytics": "^2.0.1"
   }
 }
