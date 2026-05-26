@@ -74,14 +74,9 @@
     return false;
   }
 
-  // Handle paste events specifically to catch rendering issues
-  input.addEventListener('paste', function(e) {
-    // We need to wait for the pasted text to actually be in the textarea
-    setTimeout(function() {
-      if (isLikelyRenderedMath(input.value)) {
-        showWarningModal();
-      }
-    }, 10);
+  var isPasting = false;
+  input.addEventListener('paste', function() {
+    isPasting = true;
   });
 
   // 입력에서 수식 구분자($$, $, \[ \], \( \))를 제거 (미리보기용)
@@ -140,17 +135,32 @@
   }
 
   function render() {
-    var result = window.LatexToHwp.convert(input.value);
-    output.textContent = result;
-    renderPreview(input.value);
+    var val = input.value;
+    var isRendered = isLikelyRenderedMath(val);
 
-    // 변환되면 자동으로 클립보드에 복사 (입력이 멈춘 뒤)
-    clearTimeout(autoCopyTimer);
-    if (result) {
-      autoCopyTimer = setTimeout(function () {
-        copyText(result, function () { flashHint('자동 복사됨 ✓'); });
-      }, 450);
+    if (isRendered) {
+      if (isPasting) {
+        showWarningModal();
+      }
+      output.textContent = "⚠️ 렌더링된 수식이 감지되었습니다.\n위/아래 첨자 구조가 손실되어 정상적인 HWP 변환이 불가능합니다.\n원본 LaTeX 코드를 다시 붙여넣어 주세요.";
+      output.style.color = "#c0392b";
+      renderPreview(val);
+      clearTimeout(autoCopyTimer);
+    } else {
+      output.style.color = "";
+      var result = window.LatexToHwp.convert(val);
+      output.textContent = result;
+      renderPreview(val);
+
+      // 변환되면 자동으로 클립보드에 복사 (입력이 멈춘 뒤)
+      clearTimeout(autoCopyTimer);
+      if (result) {
+        autoCopyTimer = setTimeout(function () {
+          copyText(result, function () { flashHint('자동 복사됨 ✓'); });
+        }, 450);
+      }
     }
+    isPasting = false;
   }
 
   input.addEventListener('input', render);
