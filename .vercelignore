@@ -1,0 +1,6 @@
+# 배포 번들에서 제외할 파일 (정적 서빙에는 index.html, app.js, src/만 필요)
+node_modules
+test
+*.pdf
+CLAUDE.md
+CONVERSION_RULES.md
