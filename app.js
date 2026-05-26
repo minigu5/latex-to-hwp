@@ -12,6 +12,7 @@
   var modal = document.getElementById('warningModal');
   var modalCloseBtn = document.getElementById('modalCloseBtn');
   var modalHideCheckbox = document.getElementById('modalHideTodayCheckbox');
+  var promptCopyBtn = document.getElementById('promptCopyBtn');
 
   var DEFAULT_HINT = copyHint.textContent;
   var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
@@ -42,6 +43,16 @@
   }
 
   modalCloseBtn.addEventListener('click', hideWarningModal);
+
+  if (promptCopyBtn) {
+    promptCopyBtn.addEventListener('click', function () {
+      copyText("답변에서 수식을 모두 latex로 입력해줘", function () {
+        var original = promptCopyBtn.textContent;
+        promptCopyBtn.textContent = '복사됨!';
+        setTimeout(function () { promptCopyBtn.textContent = original; }, 1200);
+      });
+    });
+  }
   
   // Also close modal when clicking outside the content
   modal.addEventListener('click', function(e) {
