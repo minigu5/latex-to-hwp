@@ -1,0 +1,9 @@
+# OS
+.DS_Store
+
+# 의존성 (현재 없음, 향후 대비)
+node_modules/
+
+# 한컴 공식 명세 PDF (저작권 보유: 한글과컴퓨터) — 저장소에 포함하지 않음.
+# 변환 규칙은 CONVERSION_RULES.md에 정리되어 있음.
+*.pdf

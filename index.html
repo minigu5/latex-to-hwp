@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LaTeX → 한글(HWP) 수식 변환기</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --card: #ffffff;
+      --border: #e2e5ea;
+      --accent: #2f6df6;
+      --accent-hover: #2257d4;
+      --text: #1f2430;
+      --muted: #707888;
+      --code-bg: #f3f4f7;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Apple SD Gothic Neo",
+        "Malgun Gothic", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
+    header h1 { font-size: 1.6rem; margin: 0 0 6px; }
+    header p { color: var(--muted); margin: 0 0 28px; font-size: 0.95rem; }
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 18px;
+    }
+    .label-row {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 10px;
+    }
+    .label { font-weight: 600; font-size: 0.95rem; }
+    textarea {
+      width: 100%;
+      min-height: 130px;
+      resize: vertical;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      color: var(--text);
+      background: #fff;
+    }
+    textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    .output {
+      width: 100%;
+      min-height: 130px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      background: var(--code-bg);
+      font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      font-size: 0.95rem;
+      white-space: pre-wrap;
+      word-break: break-all;
+      overflow-wrap: anywhere;
+    }
+    .btn {
+      border: none;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 7px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn:hover { background: var(--accent-hover); }
+    .btn.ghost { background: transparent; color: var(--accent); padding: 7px 10px; }
+    .btn.ghost:hover { background: rgba(47,109,246,0.08); }
+    .hint { color: var(--muted); font-size: 0.82rem; margin-top: 8px; }
+    .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+    .chip {
+      border: 1px solid var(--border);
+      background: #fff;
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+    .chip:hover { border-color: var(--accent); color: var(--accent); }
+    footer { color: var(--muted); font-size: 0.82rem; text-align: center; margin-top: 28px; }
+    footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>LaTeX → 한글(HWP) 수식 변환기</h1>
+      <p>AI가 만든 Markdown LaTeX 수식을 한컴오피스 한글 수식 편집기 문법으로 변환합니다.
+        결과를 복사해 한글 수식 편집기에 붙여넣으세요.</p>
+    </header>
+
+    <div class="panel">
+      <div class="label-row">
+        <span class="label">입력 (LaTeX)</span>
+        <button class="btn ghost" id="clearBtn" type="button">지우기</button>
+      </div>
+      <textarea id="input" placeholder="예: $$\frac{2\pi}{24}(t - \phi_1)$$" autofocus></textarea>
+      <div class="examples" id="examples"></div>
+    </div>
+
+    <div class="panel">
+      <div class="label-row">
+        <span class="label">출력 (한글 수식)</span>
+        <button class="btn" id="copyBtn" type="button">복사</button>
+      </div>
+      <div class="output" id="output" aria-live="polite"></div>
+      <div class="hint">한글 수식 편집기에서 공백은 항 구분 용도이며 화면에는 나타나지 않습니다.
+        백틱(`)은 좁은 간격을 의미합니다.</div>
+    </div>
+
+    <footer>
+      변환 규칙은 한컴 공식 명세(한글 문서 파일 형식 - 수식, rev 1.2)를 참고했습니다 ·
+      <a href="https://github.com/minigu5/latex-to-hwp" target="_blank" rel="noopener">GitHub</a>
+    </footer>
+  </div>
+
+  <script src="src/converter.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

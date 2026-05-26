@@ -1,0 +1,14 @@
+{
+  "name": "latex-to-hwp",
+  "version": "0.1.0",
+  "description": "AI가 만든 Markdown LaTeX 수식을 한컴오피스 한글(HWP) 수식 편집기 문법으로 변환합니다.",
+  "scripts": {
+    "test": "node --test"
+  },
+  "main": "src/converter.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/minigu5/latex-to-hwp.git"
+  }
+}
