@@ -275,6 +275,25 @@
       return { text: 'matrix{' + content + '}', keyword: false };
     }
 
+    // overset / underset
+    if (name === 'overset') {
+      var top = readArg(tokens, pos);
+      var base = readArg(tokens, pos);
+      // Specific mapping requested by user: \overset{!}{=} -> !=
+      if (top.trim() === '!' && base.trim() === '`=`') return { text: '!=', keyword: false };
+      if (top.trim() === '!' && base.trim() === '=') return { text: '!=', keyword: false };
+      return { text: '{' + top + '} atop {' + base + '}', keyword: false };
+    }
+    if (name === 'underset') {
+      var bot = readArg(tokens, pos);
+      var base = readArg(tokens, pos);
+      // If base is a function like lim, use script notation
+      if (base.trim().match(/^(lim|Lim|sum|prod|int|max|min)$/)) {
+        return { text: base + ' _{' + bot + '}', keyword: false };
+      }
+      return { text: '{' + base + '} atop {' + bot + '}', keyword: false };
+    }
+
     // 이항계수 / 조합
     if (name === 'binom' || name === 'dbinom' || name === 'tbinom') {
       var top = readArg(tokens, pos);

@@ -90,6 +90,17 @@ test('substack 지원 (matrix로 변환)', () => {
   );
 });
 
+test('overset / underset 지원', () => {
+  // 특정 매핑: \overset{!}{=} -> !=
+  assert.strictEqual(convert('\\overset{!}{=}'), '!=');
+  // 일반 overset
+  assert.strictEqual(convert('\\overset{a}{b}'), '{a} atop {b}');
+  // underset + lim
+  assert.strictEqual(convert('\\underset{x \\to 0}{\\lim}'), 'lim _{x rarrow 0}');
+  // 일반 underset
+  assert.strictEqual(convert('\\underset{a}{b}'), '{b} atop {a}');
+});
+
 test('AI 전용 오타/패턴 대응', () => {
   // \fras typo
   assert.strictEqual(convert('\\fras{1}{2}'), '{1} over {2}');
