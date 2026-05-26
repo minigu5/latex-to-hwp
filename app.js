@@ -111,11 +111,11 @@
       });
       converted = converted.replace(/\u200B/g, ' ').replace(/\n/g, ' ');
       converted = converted.replace(/\s+/g, ' ').trim();
-      return "/* Google AI Studio 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */\n" + converted;
+      return { source: "Google AI Studio", text: converted };
     } else {
       // ChatGPT
       converted = converted.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-      return "/* ChatGPT 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */\n" + converted;
+      return { source: "ChatGPT", text: converted };
     }
   }
 
@@ -182,12 +182,17 @@
       if (isPasting) {
         showWarningModal();
       }
-      output.textContent = fallbackConvert(val);
+      var fallback = fallbackConvert(val);
+      output.textContent = fallback.text;
+      output.setAttribute('data-warning', "/* " + fallback.source + " 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */");
+      output.classList.add('fallback-mode');
       output.style.color = "#d35400"; // Orange color to indicate warning/fallback
       renderPreview(val);
       clearTimeout(autoCopyTimer);
     } else {
       output.style.color = "";
+      output.removeAttribute('data-warning');
+      output.classList.remove('fallback-mode');
       var result = window.LatexToHwp.convert(val);
       output.textContent = result;
       renderPreview(val);

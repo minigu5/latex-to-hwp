@@ -69,6 +69,14 @@
       word-break: break-all;
       overflow-wrap: anywhere;
     }
+    .output.fallback-mode::before {
+      content: attr(data-warning);
+      display: block;
+      color: #d35400;
+      margin-bottom: 8px;
+      font-weight: 600;
+      user-select: none;
+    }
     .btn {
       border: none;
       background: var(--accent);
@@ -97,7 +105,13 @@
       justify-content: center;
       flex-wrap: wrap;
       font-size: 1.15rem;
-      overflow-x: auto;
+    }
+    .preview .katex-display,
+    .preview .katex {
+      max-width: 100%;
+      white-space: normal !important;
+      word-break: break-word !important;
+      overflow-wrap: break-word !important;
     }
     .preview .placeholder { color: var(--muted); font-size: 0.9rem; }
     .preview .render-error { color: #c0392b; font-size: 0.85rem; font-family: monospace; }
