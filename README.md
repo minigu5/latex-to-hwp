@@ -16,6 +16,7 @@ open index.html        # macOS
 또는 GitHub 지면 등 정적 호스팅에 그대로 올릴 수 있습니다.
 
 ### 주요 기능 (최신 업데이트)
+- **이미지에서 수식 인식 (OCR):** 수식 이미지를 끌어다 놓거나 파일 선택·붙여넣기(⌘/Ctrl+V)하면, 이미지를 LaTeX로 변환한 뒤 자동으로 한글 수식으로 바꿔 줍니다. **OCR은 서버가 아니라 접속자의 브라우저(로컬)에서 직접 실행**되며, 이미지는 외부로 전송되지 않습니다. 자세한 내용은 아래 [이미지 OCR](#이미지-ocr-브라우저-로컬-실행) 참고.
 - **렌더링된 수식 감지 및 경고:** AI 챗봇 화면에서 수식을 평문으로 그냥 복사하여 붙여넣을 경우(위/아래 첨자 정보가 손실됨), 이를 자동으로 감지하여 올바른 프롬프트("답변에서 수식을 모두 latex로 입력해줘")를 복사할 수 있는 경고 모달을 띄웁니다.
 - **불완전 복구 (Fallback):** 잘못 복사된 수식이라도 ChatGPT, Google AI Studio, Claude의 렌더링 평문 복사 패턴(예: 분모-분자 역전 등)을 분석하여 가능한 수준에서 HWP 코드로 복구해 줍니다.
 - **향상된 수식 지원:** `\substack` (다중 행 첨자), `\iiint` (다중 적분), `array` 환경 변환 및 `\overset{!}{=}` (특수 매핑) 등 복잡한 수식을 지원합니다.
@@ -42,9 +43,20 @@ convert('$$\\frac{2\\pi}{24}(t - \\phi_1)$$');
 
 > 한글 수식 편집기에서 **공백은 항(term) 구분 용도**이며 화면에는 나타나지 않습니다. **백틱(`` ` ``)은 1/4 크기의 좁은 간격**으로, 연산자 주위 간격을 보기 좋게 맞추는 데 쓰입니다.
 
+## 이미지 OCR (브라우저 로컬 실행)
+
+수식 사진·캡처를 LaTeX로 인식한 뒤 그대로 한글 수식으로 변환합니다.
+
+- **동작 위치:** 인식(OCR)과 변환 모두 **접속자의 브라우저에서** 실행됩니다. 이미지는 서버로 업로드되지 않습니다.
+- **사용 모델:** [`alephpi/FormulaNet`](https://huggingface.co/alephpi/FormulaNet) (PP-FormulaNet-S 기반 파인튜닝, 20M 파라미터). `image-to-text` 비전-인코더-디코더 ONNX 모델로, [transformers.js](https://github.com/huggingface/transformers.js)(`@huggingface/transformers`)가 ONNX Runtime Web(WASM)으로 실행합니다.
+- **모델 로딩:** 첫 인식 때 HuggingFace Hub에서 모델(약 80MB)을 한 번 내려받아 브라우저 Cache Storage에 저장하며, 이후에는 즉시 동작합니다. 추론은 Web Worker(`src/ocr-worker.js`)에서 별도 스레드로 수행해 UI를 막지 않습니다.
+- **전처리:** 흰 배경 합성 → 그레이스케일 → (어두운 이미지면) 색 반전 → 여백 크롭 → 384×384 비율 유지 축소 + 중앙 패딩 → 정규화. (UniMERNet 전처리 규약을 그대로 따름. `app.js`의 `preprocessImage`)
+- **라이선스 주의:** 모델 가중치는 **AGPL-3.0**입니다(런타임 라이브러리 transformers.js는 Apache-2.0). 공개 호스팅 시 소스 공개 의무가 생길 수 있으므로 유의하세요. 이 저장소 코드 자체는 MIT입니다.
+- **요구 사항:** 모듈 Web Worker를 지원하는 최신 브라우저(Chrome/Edge/Firefox/Safari 최신 버전). `file://` 직접 열기에서는 워커가 동작하지 않을 수 있으니 정적 서버(아래 배포 또는 `python3 -m http.server`)로 여세요.
+
 ## 배포
 
-빌드가 필요 없는 정적 사이트라 Vercel 등에 그대로 올릴 수 있습니다. GitHub 연동 자동 배포 방법은 [`VERCEL_DEPLOY.md`](./VERCEL_DEPLOY.md)를 참고하세요.
+빌드가 필요 없는 정적 사이트라 Vercel 등에 그대로 올릴 수 있습니다. GitHub 연동 자동 배포 방법은 [`VERCEL_DEPLOY.md`](./VERCEL_DEPLOY.md)를 참고하세요. transformers.js와 OCR 모델은 모두 CDN/HuggingFace Hub에서 클라이언트로 로드되므로, 별도 서버나 빌드 단계는 필요 없습니다.
 
 ## 테스트
 

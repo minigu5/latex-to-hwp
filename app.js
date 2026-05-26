@@ -63,7 +63,7 @@
 
   if (promptCopyBtn) {
     promptCopyBtn.addEventListener('click', function () {
-      copyText("답변에서 수식을 모두 latex로 입력해줘", function () {
+      copyText("답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘.\n복사 가능하도록 latex 코드 블록을 사용해 줘.", function () {
         var original = promptCopyBtn.textContent;
         promptCopyBtn.textContent = '복사됨!';
         setTimeout(function () { promptCopyBtn.textContent = original; }, 1200);
@@ -274,6 +274,310 @@
       copyBtn.textContent = '복사됨!';
       setTimeout(function () { copyBtn.textContent = original; }, 1200);
     });
+  });
+
+  // ── 이미지 OCR (브라우저 로컬 · FormulaNet via transformers.js) ───────
+  // 이미지 → (전처리) → 워커에서 모델 추론 → LaTeX → 기존 입력창에 넣어
+  // 기존 클라이언트 변환 흐름(render)을 그대로 태운다. 서버는 쓰지 않는다.
+
+  var dropzone = document.getElementById('dropzone');
+  var imageInput = document.getElementById('imageInput');
+  var pickImageBtn = document.getElementById('pickImageBtn');
+  var ocrStatus = document.getElementById('ocrStatus');
+  var ocrPreviewImg = document.getElementById('ocrPreviewImg');
+
+  var OCR_SIZE = 384;
+  // UniMERNet 전처리 정규화 상수 (FormulaNet 학습 기준)
+  var UNIMER_MEAN = 0.7931;
+  var UNIMER_STD = 0.1738;
+
+  var TF_CDN = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.5';
+  var OCR_MODEL = 'alephpi/FormulaNet';
+
+  var ocrEngine = null;       // Promise → { predict(Float32Array) → Promise<string> }
+  var lastPreviewUrl = null;
+
+  function setOcrStatus(html, cls) {
+    if (!ocrStatus) return;
+    ocrStatus.className = 'ocr-status' + (cls ? ' ' + cls : '');
+    ocrStatus.innerHTML = html;
+  }
+
+  function renderOcrProgress(p) {
+    if (!p) return;
+    if (p.status === 'progress') {
+      var pct = (typeof p.progress === 'number') ? Math.round(p.progress)
+        : (p.total ? Math.round((p.loaded / p.total) * 100) : null);
+      if (pct === null) { setOcrStatus('AI 모델 내려받는 중…', 'busy'); return; }
+      if (pct > 100) pct = 100;
+      setOcrStatus('AI 모델 다운로드 중… ' + pct +
+        '% <span class="ocr-progress"><i style="width:' + pct + '%"></i></span>', 'busy');
+    } else if (p.status === 'initiate' || p.status === 'download') {
+      setOcrStatus('AI 모델 내려받는 중… (최초 1회)', 'busy');
+    }
+  }
+
+  function ocrUid() {
+    return (self.crypto && crypto.randomUUID)
+      ? crypto.randomUUID() : String(Date.now()) + Math.random();
+  }
+
+  // (1순위) 별도 스레드 워커 엔진. 모델 로딩이 끝나면 { predict } 로 resolve.
+  // 워커 생성 자체가 막히는 환경(file:// 직접 열기, 모듈 워커 미지원)에서는 reject 한다.
+  function createWorkerEngine() {
+    return new Promise(function (resolve, reject) {
+      var worker;
+      try {
+        worker = new Worker('src/ocr-worker.js', { type: 'module' });
+      } catch (e) {
+        reject(e); return;
+      }
+      var ready = false;
+      var pending = {};
+      worker.onmessage = function (e) {
+        var m = e.data || {};
+        if (m.status === 'progress') {
+          renderOcrProgress(m.data);
+        } else if (m.status === 'ready') {
+          ready = true;
+          resolve({
+            predict: function (arr) {
+              return new Promise(function (res, rej) {
+                var key = ocrUid();
+                pending[key] = { res: res, rej: rej };
+                worker.postMessage({ action: 'predict', array: arr, key: key }, [arr.buffer]);
+              });
+            }
+          });
+        } else if (m.status === 'result') {
+          if (pending[m.key]) { pending[m.key].res(m.text); delete pending[m.key]; }
+        } else if (m.status === 'error') {
+          if (m.key && pending[m.key]) { pending[m.key].rej(new Error(m.error)); delete pending[m.key]; }
+          else if (!ready) { reject(new Error(m.error || '모델 로딩 실패')); }
+        }
+      };
+      worker.onerror = function (ev) {
+        if (!ready) reject(new Error(ev.message || '워커 로딩 실패'));
+      };
+      worker.postMessage({ action: 'init' });
+    });
+  }
+
+  // (폴백) 메인 스레드 엔진. transformers.js를 동적 import 해 직접 추론한다.
+  // 워커를 못 쓰는 환경에서도 동작한다(추론 중 잠시 UI가 멈출 수 있음).
+  function createMainThreadEngine() {
+    setOcrStatus('AI 모델 준비 중… (호환 모드)', 'busy');
+    return import(TF_CDN).then(function (tf) {
+      tf.env.allowLocalModels = false;
+      return tf.VisionEncoderDecoderModel.from_pretrained(OCR_MODEL, {
+        dtype: 'fp32',
+        progress_callback: function (data) { renderOcrProgress(data); }
+      }).then(function (model) {
+        return tf.PreTrainedTokenizer.from_pretrained(OCR_MODEL).then(function (tokenizer) {
+          return {
+            predict: function (arr) {
+              var single = new tf.Tensor('float32', arr, [1, 1, OCR_SIZE, OCR_SIZE]);
+              var pixel = tf.cat([single, single, single], 1);
+              return Promise.resolve(model.generate({ inputs: pixel })).then(function (outputs) {
+                return tokenizer.batch_decode(outputs, { skip_special_tokens: true })[0];
+              });
+            }
+          };
+        });
+      });
+    });
+  }
+
+  // 엔진을 한 번만 만든다. 워커가 안 되면 메인 스레드로 자동 폴백.
+  function ensureOcrEngine() {
+    if (ocrEngine) return ocrEngine;
+    ocrEngine = createWorkerEngine().catch(function () {
+      return createMainThreadEngine();
+    });
+    return ocrEngine;
+  }
+
+  // 이미지를 모델 입력 형태(384x384 그레이스케일 Float32Array)로 전처리한다.
+  // 단계: 흰 배경 합성 → 그레이스케일 → (어두운 이미지면) 색 반전 → 여백 크롭
+  //       → 비율 유지 축소 + 중앙 패딩 → 정규화. (Texo-web/UniMERNet 전처리와 동일)
+  function preprocessImage(blob) {
+    return createImageBitmap(blob).then(function (bmp) {
+      var W = bmp.width, H = bmp.height;
+      var base = document.createElement('canvas');
+      base.width = W; base.height = H;
+      var bx = base.getContext('2d', { willReadFrequently: true });
+      bx.fillStyle = '#fff';
+      bx.fillRect(0, 0, W, H);          // 투명 배경을 흰색으로
+      bx.drawImage(bmp, 0, 0);
+      var rgba = bx.getImageData(0, 0, W, H).data;
+
+      // 그레이스케일 (Rec.601 luma — PIL 'L' 변환과 동일)
+      var grey = new Uint8ClampedArray(W * H);
+      for (var i = 0, p = 0; i < grey.length; i++, p += 4) {
+        grey[i] = (rgba[p] * 0.299 + rgba[p + 1] * 0.587 + rgba[p + 2] * 0.114) | 0;
+      }
+
+      // 색 반전 휴리스틱: 어두운 픽셀이 더 많으면(흰 글씨/검은 배경) 반전해 흑자/백지로
+      var hist = new Array(256);
+      for (var h = 0; h < 256; h++) hist[h] = 0;
+      for (var g = 0; g < grey.length; g++) hist[grey[g]]++;
+      var dark = 0, light = 0;
+      for (var v = 0; v < 200; v++) dark += hist[v];
+      for (var w = 200; w < 256; w++) light += hist[w];
+      if (dark >= light) {
+        for (var r = 0; r < grey.length; r++) grey[r] = 255 - grey[r];
+      }
+
+      // 여백 크롭: 정규화 값 < 200 인 픽셀(=내용)의 경계 상자
+      var mn = 255, mx = 0;
+      for (var a = 0; a < grey.length; a++) { if (grey[a] < mn) mn = grey[a]; if (grey[a] > mx) mx = grey[a]; }
+      var cropX = 0, cropY = 0, cropW = W, cropH = H;
+      if (mx !== mn) {
+        var minX = W, minY = H, maxX = 0, maxY = 0, found = false;
+        var range = mx - mn;
+        for (var y = 0; y < H; y++) {
+          for (var x = 0; x < W; x++) {
+            var nrm = ((grey[y * W + x] - mn) / range) * 255;
+            if (nrm < 200) {
+              found = true;
+              if (x < minX) minX = x; if (x > maxX) maxX = x;
+              if (y < minY) minY = y; if (y > maxY) maxY = y;
+            }
+          }
+        }
+        if (found && maxX >= minX && maxY >= minY) {
+          cropX = minX; cropY = minY;
+          cropW = Math.max(1, maxX - minX);
+          cropH = Math.max(1, maxY - minY);
+        }
+      }
+
+      // 크롭 영역을 캔버스에 그린다
+      var crop = document.createElement('canvas');
+      crop.width = cropW; crop.height = cropH;
+      var cx = crop.getContext('2d');
+      var cropData = cx.createImageData(cropW, cropH);
+      for (var cy = 0; cy < cropH; cy++) {
+        for (var cxp = 0; cxp < cropW; cxp++) {
+          var gv = grey[(cropY + cy) * W + (cropX + cxp)];
+          var di = (cy * cropW + cxp) * 4;
+          cropData.data[di] = cropData.data[di + 1] = cropData.data[di + 2] = gv;
+          cropData.data[di + 3] = 255;
+        }
+      }
+      cx.putImageData(cropData, 0, 0);
+
+      // 384x384 안에 비율 유지로 축소 후 중앙 배치 (나머지는 0=검정 패딩)
+      var scale = OCR_SIZE / Math.min(cropH, cropW);
+      var newW = Math.round(cropW * scale), newH = Math.round(cropH * scale);
+      if (newW > OCR_SIZE || newH > OCR_SIZE) {
+        var ratio = Math.min(OCR_SIZE / newW, OCR_SIZE / newH);
+        newW = Math.round(newW * ratio); newH = Math.round(newH * ratio);
+      }
+      newW = Math.max(1, newW); newH = Math.max(1, newH);
+      var padW = Math.floor((OCR_SIZE - newW) / 2);
+      var padH = Math.floor((OCR_SIZE - newH) / 2);
+
+      var fin = document.createElement('canvas');
+      fin.width = OCR_SIZE; fin.height = OCR_SIZE;
+      var fx = fin.getContext('2d', { willReadFrequently: true });
+      fx.fillStyle = '#000';
+      fx.fillRect(0, 0, OCR_SIZE, OCR_SIZE);
+      fx.imageSmoothingEnabled = true;
+      fx.imageSmoothingQuality = 'high';
+      fx.drawImage(crop, padW, padH, newW, newH);
+      var finData = fx.getImageData(0, 0, OCR_SIZE, OCR_SIZE).data;
+
+      var arr = new Float32Array(OCR_SIZE * OCR_SIZE);
+      for (var k = 0, q = 0; k < arr.length; k++, q += 4) {
+        arr[k] = (finData[q] / 255 - UNIMER_MEAN) / UNIMER_STD; // R채널 = grey
+      }
+      return arr;
+    });
+  }
+
+  function runOcr(blob) {
+    if (!blob) return;
+
+    if (lastPreviewUrl) URL.revokeObjectURL(lastPreviewUrl);
+    lastPreviewUrl = URL.createObjectURL(blob);
+    ocrPreviewImg.src = lastPreviewUrl;
+    ocrPreviewImg.hidden = false;
+
+    setOcrStatus('AI 모델 준비 중… (최초 1회는 다운로드로 시간이 걸릴 수 있어요)', 'busy');
+
+    // 모델 로딩과 이미지 전처리를 동시에 진행
+    var pre = preprocessImage(blob);
+    ensureOcrEngine()
+      .then(function (engine) {
+        setOcrStatus('수식 인식 중…', 'busy');
+        return pre.then(function (arr) { return engine.predict(arr); });
+      })
+      .then(function (latex) {
+        latex = (latex || '').trim();
+        if (!latex) {
+          setOcrStatus('수식을 찾지 못했어요. 더 또렷하고 여백이 적은 이미지로 다시 시도해 보세요.', 'error');
+          return;
+        }
+        input.value = '$$' + latex + '$$';
+        isPasting = false; // OCR 결과는 정상 LaTeX이므로 경고 모달을 띄우지 않음
+        render();
+        setOcrStatus('인식 완료 ✓ 아래에서 결과를 확인·수정하세요.', '');
+      })
+      .catch(function (err) {
+        setOcrStatus('인식 실패: ' + ((err && err.message) ? err.message : err), 'error');
+      });
+  }
+
+  if (pickImageBtn) {
+    pickImageBtn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      imageInput.click();
+    });
+  }
+
+  if (dropzone) {
+    dropzone.addEventListener('click', function (e) {
+      if (e.target === pickImageBtn) return;
+      imageInput.click();
+    });
+    dropzone.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); imageInput.click(); }
+    });
+    dropzone.addEventListener('dragover', function (e) {
+      e.preventDefault();
+      dropzone.classList.add('dragover');
+    });
+    dropzone.addEventListener('dragleave', function () { dropzone.classList.remove('dragover'); });
+    dropzone.addEventListener('drop', function (e) {
+      e.preventDefault();
+      dropzone.classList.remove('dragover');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f && /^image\//.test(f.type)) runOcr(f);
+      else setOcrStatus('이미지 파일을 끌어다 놓아 주세요.', 'error');
+    });
+  }
+
+  if (imageInput) {
+    imageInput.addEventListener('change', function () {
+      var f = imageInput.files && imageInput.files[0];
+      if (f) runOcr(f);
+      imageInput.value = ''; // 같은 파일 재선택 허용
+    });
+  }
+
+  // 페이지 어디서든 이미지 붙여넣기를 OCR 입력으로 받는다 (텍스트 붙여넣기는 그대로)
+  document.addEventListener('paste', function (e) {
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].type && items[i].type.indexOf('image') === 0) {
+        var blob = items[i].getAsFile();
+        if (blob) { e.preventDefault(); runOcr(blob); }
+        return;
+      }
+    }
   });
 
   render();
