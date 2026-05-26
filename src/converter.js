@@ -45,6 +45,7 @@
     angle: 'angle', triangle: 'triangle', dagger: 'dagger', ddagger: 'ddagger',
     lnot: 'lnot', neg: 'lnot', top: 'top', bot: 'bot', perp: 'bot', models: 'models',
     vdash: 'vdash', prime: 'prime', nabla: 'nabla', hbar: 'hbar',
+    iint: 'dint', iiint: 'tint', iiiint: 'qint',
     // 화살표
     leftarrow: 'larrow', gets: 'larrow', rightarrow: 'rarrow', to: 'rarrow',
     uparrow: 'uparrow', downarrow: 'downarrow', leftrightarrow: 'lrarrow',
@@ -345,6 +346,9 @@
       return { text: 'bold ' + readArg(tokens, pos), keyword: true };
     }
 
+    // Ignore structural formatting commands in HWP
+    if (name === 'hline' || name === 'vline') return null;
+
     if (name === 'not') return { text: 'not', keyword: true };
     if (name === 'over') return { text: 'over', keyword: true };
     if (name === 'atop') return { text: 'atop', keyword: true };
@@ -368,8 +372,12 @@
     var e = peek(tokens, pos);
     if (e && e.type === 'cmd' && e.value === 'end') { pos.i++; readRawName(tokens, pos); }
 
-    if (MATRIX_ENV.hasOwnProperty(env)) {
-      return { text: MATRIX_ENV[env] + '{ ' + content + ' }', keyword: false };
+    // HWP matrix doesn't support | or lines, so we clean them
+    content = content.replace(/\|/g, '').trim();
+
+    if (MATRIX_ENV.hasOwnProperty(env) || env === 'array') {
+      var mType = MATRIX_ENV[env] || 'matrix';
+      return { text: mType + '{ ' + content + ' }', keyword: false };
     }
     if (env === 'cases') {
       return { text: 'cases{ ' + content + ' }', keyword: false };
