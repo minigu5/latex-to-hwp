@@ -11,7 +11,7 @@ test('골든 예시 변환', () => {
   const input =
     '$$\\lambda(t) = \\lambda_0 + A_1 \\sin\\left(\\frac{2\\pi}{24}(t - \\phi_1)\\right) + A_2 \\sin\\left(\\frac{2\\pi}{12}(t - \\phi_2)\\right)$$';
   const expected =
-    'lambda ( t ) `=` lambda _{0} `+` A _{1} sin ( {2 pi} over {24} ( t `-` phi _{1} ) ) `+` A _{2} sin ( {2 pi} over {12} ( t `-` phi _{2} ) )';
+    'lambda ( t ) `=` lambda _{0} `+` A _{1} sin LEFT( {2 pi} over {24} ( t `-` phi _{1} ) RIGHT) `+` A _{2} sin LEFT( {2 pi} over {12} ( t `-` phi _{2} ) RIGHT)';
   assert.strictEqual(convert(input), expected);
 });
 
@@ -66,9 +66,10 @@ test('행렬 / cases 환경', () => {
   );
 });
 
-test('함수는 그대로, \\left \\right는 단순 괄호로', () => {
+test('함수는 그대로, \\left \\right는 LEFT(/RIGHT)로', () => {
   assert.strictEqual(convert('\\sin x'), 'sin x');
-  assert.strictEqual(convert('\\left( x \\right)'), '( x )');
+  assert.strictEqual(convert('\\left( x \\right)'), 'LEFT( x RIGHT)');
+  assert.strictEqual(convert('\\left[ x \\right]'), 'LEFT[ x RIGHT]');
 });
 
 test('수식 구분자($$, $, \\[ \\])는 제거', () => {

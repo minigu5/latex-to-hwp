@@ -278,9 +278,9 @@
       return { text: 'sqrt {' + rad + '}', keyword: false };
     }
 
-    // 큰 괄호 — 현재 정책: 단순 괄호로 변환 (CONVERSION_RULES.md 4절)
-    if (name === 'left') return { text: readDelim(tokens, pos), keyword: false };
-    if (name === 'right') return { text: readDelim(tokens, pos), keyword: false };
+    // 큰 괄호 — 정책: LEFT( ... RIGHT) (한글 명세 권장, CONVERSION_RULES.md 4절)
+    if (name === 'left') return { text: 'LEFT' + readDelim(tokens, pos), keyword: false };
+    if (name === 'right') return { text: 'RIGHT' + readDelim(tokens, pos), keyword: false };
     if (name === 'bigl' || name === 'bigr' || name === 'Bigl' || name === 'Bigr' ||
         name === 'biggl' || name === 'biggr' || name === 'Biggl' || name === 'Biggr') {
       return { text: readDelim(tokens, pos), keyword: false };

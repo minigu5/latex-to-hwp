@@ -60,7 +60,7 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 | `x^{n}` / `x^n` | `x^{n}` | |
 | `\sum_{i=1}^{n}` | `sum _{i=1} ^{n}` | |
 | `\int_a^b` | `int _{a} ^{b}` | |
-| `\left(` `\right)` | `(` `)` | 크기 지시자 제거 |
+| `\left(` `\right)` | `LEFT(` `RIGHT)` | 자동 크기 괄호 (명세 권장) |
 | `\alpha`, `\lambda`, `\pi`, `\phi` … | `alpha`, `lambda`, `pi`, `phi` … | 그리스 문자 이름 매핑 |
 | `\sin`, `\cos`, `\log`, `\lim` … | `sin`, `cos`, `log`, `lim` … | 함수 이름 |
 | `\cdot` | `cdot` | |
