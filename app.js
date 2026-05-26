@@ -113,20 +113,31 @@
     '≈': 'approx ', '≠': '!= ', '≡': 'equiv ', '≤': '<= ', '≥': '>= ',
     'α': 'alpha ', 'β': 'beta ', 'γ': 'gamma ', 'δ': 'delta ', 'ε': 'epsilon ',
     'ζ': 'zeta ', 'η': 'eta ', 'θ': 'theta ', 'ι': 'iota ', 'κ': 'kappa ',
-    'λ': 'lambda ', 'μ': 'mu ', 'ν': 'nu ', 'ξ': 'xi ', 'π': 'pi ',
+    'λ': 'lambda ', 'mu': 'mu ', 'ν': 'nu ', 'ξ': 'xi ', 'π': 'pi ',
     'ρ': 'rho ', 'σ': 'sigma ', 'τ': 'tau ', 'υ': 'upsilon ', 'φ': 'phi ',
     'χ': 'chi ', 'ψ': 'psi ', 'ω': 'omega ',
     'Γ': 'Gamma ', 'Δ': 'Delta ', 'Θ': 'Theta ', 'Λ': 'Lambda ', 'Ξ': 'Xi ',
-    'Π': 'Pi ', 'Σ': 'Sigma ', 'Υ': 'Upsilon ', 'Φ': 'Phi ', 'Ψ': 'Psi ', 'Ω': 'Omega ',
+    'Π': 'Pi ', 'Σ': 'Sigma ', 'Υ': 'Upsilon ', 'Φ': 'PHI ', 'Ψ': 'Psi ', 'Ω': 'Omega ',
     '→': '-> ', '←': '<- ', '↑': 'uparrow ', '↓': 'downarrow ', '↔': '<-> ',
     '−': '- ', '×': 'times ', '÷': 'div ', '±': '+- ', '√': 'sqrt ', '∝': 'propto ',
     '∈': 'in ', '∉': 'notin ', '∪': 'union ', '∩': 'inter ', '⊂': 'subset ',
-    '⊃': 'supset ', '⊆': 'subseteq ', '⊇': 'supseteq '
+    '⊃': 'supset ', '⊆': 'subseteq ', '⊇': 'supseteq ', '⋅': 'BULLET '
   };
 
   function fallbackConvert(text) {
     var isGAS = /\u200B/.test(text);
     
+    // Claude flat text heuristic
+    if (!isGAS && !/\n/.test(text) && text.indexOf('=') !== -1) {
+      // Subscript heuristics
+      text = text.replace(/([A-ZΑ-Ω])([a-zA-Z])/g, '$1_{$2}');
+      text = text.replace(/([a-zA-Zα-ωΑ-Ω])([0-9])/g, '$1_{$2}');
+      
+      // Fraction heuristics (Denominator comes before Numerator in some flat copies)
+      text = text.replace(/dt(d[a-zA-Zα-ωΑ-Ω](?:_\{[a-zA-Z]\})?)/g, '{$1} over {dt}');
+      text = text.replace(/(ε_\{0\})1/g, '{1} over {$1}');
+    }
+
     // Replace unicodes with HWP keywords
     var converted = text.split('').map(function(c) {
       return UNICODE_TO_HWP[c] || c;
@@ -141,9 +152,9 @@
       converted = converted.replace(/\s+/g, ' ').trim();
       return { source: "Google AI Studio", text: converted };
     } else {
-      // ChatGPT
+      // Claude / ChatGPT flat text
       converted = converted.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
-      return { source: "ChatGPT", text: converted };
+      return { source: "Claude/ChatGPT", text: converted };
     }
   }
 
