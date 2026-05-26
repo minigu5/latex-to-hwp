@@ -82,3 +82,17 @@ test('빈 입력은 빈 문자열', () => {
   assert.strictEqual(convert(''), '');
   assert.strictEqual(convert('   '), '');
 });
+
+test('substack 지원 (matrix로 변환)', () => {
+  assert.strictEqual(
+    convert('\\sum_{\\substack{i=1\\\\j=2}}^n'),
+    'sum _{matrix{i `=` 1 # j `=` 2}} ^{n}'
+  );
+});
+
+test('AI 전용 오타/패턴 대응', () => {
+  // \fras typo
+  assert.strictEqual(convert('\\fras{1}{2}'), '{1} over {2}');
+  // 텍스트 섞임 및 한글 지원
+  assert.strictEqual(convert('안녕하세요 $$\\frac{1}{2}$$'), '"안녕하세요" {1} over {2}');
+});

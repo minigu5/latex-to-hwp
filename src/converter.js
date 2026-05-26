@@ -106,6 +106,12 @@
         while (k < n && /[0-9.]/.test(input[k])) k++;
         tokens.push({ type: 'char', value: input.slice(i, k) });
         i = k;
+      } else if (/[^\x00-\x7F]/.test(c)) {
+        // 한글 등 non-ASCII 문자는 최대한 묶어서 하나의 항으로 처리
+        var m = i;
+        while (m < n && /[^\x00-\x7F]/.test(input[m])) m++;
+        tokens.push({ type: 'text', value: input.slice(i, m) });
+        i = m;
       } else {
         tokens.push({ type: 'char', value: c });
         i++;
@@ -138,7 +144,7 @@
     return parts.join(' ');
   }
 
-  // 위/아래 첨자를 직전 항에 붙인다. 항상 앞에 공백을 둔다(골든 예시 관례).
+  // 위/아래 첨자 직전 항에 붙인다. 항상 앞에 공백을 둔다(골든 예시 관례).
   function attachScripts(text, tokens, pos) {
     while (pos.i < tokens.length) {
       var t = tokens[pos.i];
@@ -179,7 +185,7 @@
     while (pos.i < tokens.length) {
       var tk = tokens[pos.i];
       if (tk.type === 'ctrl' && tk.value === '}') { pos.i++; break; }
-      if (tk.type === 'char' || tk.type === 'cmd') name += tk.value;
+      if (tk.type === 'char' || tk.type === 'cmd' || tk.type === 'text') name += tk.value;
       pos.i++;
     }
     return name;
@@ -190,7 +196,7 @@
     var t = peek(tokens, pos);
     if (!t) return '';
     pos.i++;
-    if (t.type === 'char') {
+    if (t.type === 'char' || t.type === 'text') {
       if (t.value === '.') return ''; // \left. \right. → 구분자 없음
       return t.value; // ( ) [ ] | 등
     }
@@ -234,6 +240,12 @@
       return { text: t.value, keyword: false };
     }
 
+    if (t.type === 'text') {
+      pos.i++;
+      // 한글 등 텍스트는 따옴표로 감싸서 한 항으로 유지
+      return { text: '"' + t.value + '"', keyword: false };
+    }
+
     // cmd
     pos.i++;
     return convertCmd(t.value, tokens, pos);
@@ -247,10 +259,20 @@
     if (SPACING.hasOwnProperty(name)) return { text: SPACING[name], keyword: false };
 
     // 분수
-    if (name === 'frac' || name === 'dfrac' || name === 'tfrac' || name === 'cfrac') {
+    if (name === 'frac' || name === 'dfrac' || name === 'tfrac' || name === 'cfrac' || name === 'fras') {
       var a = readArg(tokens, pos);
       var b = readArg(tokens, pos);
       return { text: '{' + a + '} over {' + b + '}', keyword: false };
+    }
+
+    // substack support (mapping to matrix in HWP)
+    if (name === 'substack') {
+      var content = readArg(tokens, pos);
+      // Remove outer braces if added by readArg
+      if (content.startsWith('{') && content.endsWith('}')) {
+        content = content.slice(1, -1);
+      }
+      return { text: 'matrix{' + content + '}', keyword: false };
     }
 
     // 이항계수 / 조합
@@ -341,10 +363,15 @@
 
   function stripDelimiters(s) {
     s = s.trim();
-    s = s.replace(/^\$\$/, '').replace(/\$\$$/, '');
-    s = s.replace(/^\$/, '').replace(/\$$/, '');
-    s = s.replace(/^\\\[/, '').replace(/\\\]$/, '');
-    s = s.replace(/^\\\(/, '').replace(/\\\)$/, '');
+    // 전역적으로 모든 구분자 제거 (텍스트 중간에 섞인 경우 대응)
+    s = s.replace(/\$\$/g, '');
+    s = s.replace(/\$/g, '');
+    s = s.replace(/\\\[/g, '');
+    s = s.replace(/\\\]/g, '');
+    s = s.replace(/\\\( /g, ''); // 뒤에 공백이 있을 수 있음
+    s = s.replace(/\\\) /g, '');
+    s = s.replace(/\\\(/g, '');
+    s = s.replace(/\\\)/g, '');
     return s.trim();
   }
 
