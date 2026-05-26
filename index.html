@@ -103,6 +103,67 @@
     .preview .render-error { color: #c0392b; font-size: 0.85rem; font-family: monospace; }
     footer { color: var(--muted); font-size: 0.82rem; text-align: center; margin-top: 28px; }
     footer a { color: var(--accent); text-decoration: none; }
+    
+    /* Modal Styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+    .modal-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+    .modal-content {
+      background: #fff;
+      padding: 24px;
+      border-radius: 12px;
+      max-width: 480px;
+      width: 90%;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      text-align: center;
+    }
+    .modal-icon {
+      font-size: 3rem;
+      margin-bottom: 12px;
+    }
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 12px;
+      color: #c0392b;
+    }
+    .modal-body {
+      font-size: 0.95rem;
+      color: var(--text);
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .modal-actions {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    .modal-close-btn {
+      width: 100%;
+      padding: 10px;
+    }
+    .modal-checkbox-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.85rem;
+      color: var(--muted);
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -142,6 +203,24 @@
       변환 규칙은 한컴 공식 명세(한글 문서 파일 형식 - 수식, rev 1.2)를 참고했습니다 ·
       <a href="https://github.com/minigu5/latex-to-hwp" target="_blank" rel="noopener">GitHub</a>
     </footer>
+  </div>
+
+  <div class="modal-overlay" id="warningModal">
+    <div class="modal-content">
+      <div class="modal-icon">⚠️</div>
+      <h2 class="modal-title">렌더링된 수식 감지됨</h2>
+      <div class="modal-body">
+        화면에 보여지는 수식을 그냥 복사하셨나요?<br>
+        이 경우 위/아래 첨자 정보가 사라져서 제대로 변환할 수 없습니다.<br><br>
+        AI 챗봇 화면에서 <strong>'코드 복사(Copy code)' 버튼</strong>을 누르거나, 원본 LaTeX 코드 자체를 복사해서 붙여넣어 주세요.
+      </div>
+      <div class="modal-actions">
+        <button class="btn modal-close-btn" id="modalCloseBtn">확인했습니다</button>
+        <label class="modal-checkbox-wrapper">
+          <input type="checkbox" id="modalHideTodayCheckbox"> 오늘 하루 보지 않기
+        </label>
+      </div>
+    </div>
   </div>
 
   <script defer src="src/converter.js"></script>

@@ -8,10 +8,81 @@
   var clearBtn = document.getElementById('clearBtn');
   var copyHint = document.getElementById('copyHint');
 
+  // Modal elements
+  var modal = document.getElementById('warningModal');
+  var modalCloseBtn = document.getElementById('modalCloseBtn');
+  var modalHideCheckbox = document.getElementById('modalHideTodayCheckbox');
+
   var DEFAULT_HINT = copyHint.textContent;
   var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
   var autoCopyTimer = null;
   var hintTimer = null;
+
+  var HIDE_WARNING_KEY = 'latexToHwp_hideWarningUntil';
+
+  function shouldShowWarning() {
+    var hideUntil = localStorage.getItem(HIDE_WARNING_KEY);
+    if (!hideUntil) return true;
+    return Date.now() > parseInt(hideUntil, 10);
+  }
+
+  function hideWarningModal() {
+    modal.classList.remove('show');
+    if (modalHideCheckbox.checked) {
+      // Set to hide for 24 hours
+      var tomorrow = Date.now() + 24 * 60 * 60 * 1000;
+      localStorage.setItem(HIDE_WARNING_KEY, tomorrow.toString());
+    }
+  }
+
+  function showWarningModal() {
+    if (!shouldShowWarning()) return;
+    modalHideCheckbox.checked = false;
+    modal.classList.add('show');
+  }
+
+  modalCloseBtn.addEventListener('click', hideWarningModal);
+  
+  // Also close modal when clicking outside the content
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      hideWarningModal();
+    }
+  });
+
+  // Heuristic to detect if pasted text is likely rendered math instead of LaTeX
+  function isLikelyRenderedMath(text) {
+    if (!text || text.trim().length === 0) return false;
+    
+    // Count occurrences of common LaTeX indicators
+    var latexMarkers = (text.match(/[\^_\\{}]/g) || []).length;
+    
+    // Count occurrences of unicode math symbols that are usually macros in LaTeX
+    var unicodeMathMarkers = (text.match(/[∫∑∂∞≈≠≡≤≥αβγδεζηθικλμνξπρστυφχψωΓΔΘΛΞΠΣΥΦΨΩ]/g) || []).length;
+    
+    // If it has very few LaTeX markers but has unicode math symbols, it's likely rendered.
+    // Also, rendered text from AI often contains invisible characters like zero-width spaces (\u200B)
+    var hasInvisibleChars = /\u200B/.test(text);
+    
+    if (hasInvisibleChars && latexMarkers === 0) return true;
+    
+    // If text is somewhat long, has unicode math, but almost no latex structural characters
+    if (text.length > 10 && unicodeMathMarkers > 0 && latexMarkers <= 1) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Handle paste events specifically to catch rendering issues
+  input.addEventListener('paste', function(e) {
+    // We need to wait for the pasted text to actually be in the textarea
+    setTimeout(function() {
+      if (isLikelyRenderedMath(input.value)) {
+        showWarningModal();
+      }
+    }, 10);
+  });
 
   // 입력에서 수식 구분자($$, $, \[ \], \( \))를 제거 (미리보기용)
   function stripDelimiters(s) {
@@ -100,3 +171,4 @@
 
   render();
 })();
+
