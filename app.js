@@ -41,8 +41,8 @@
     modalHideCheckbox.checked = false;
     modal.classList.add('show');
 
-    // Disable confirmation button for 3 seconds
-    var secondsLeft = 3;
+    // Disable confirmation button for 2 seconds
+    var secondsLeft = 2;
     modalCloseBtn.disabled = true;
     var originalText = "확인했습니다";
     modalCloseBtn.textContent = originalText + " (" + secondsLeft + ")";
