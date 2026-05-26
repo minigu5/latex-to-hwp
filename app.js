@@ -189,7 +189,20 @@
   }
 
   function renderPreview(latex) {
-    var body = stripDelimiters(latex);
+    if (!latex) { preview.innerHTML = PLACEHOLDER; return; }
+    
+    // Apply AI-friendly preprocessing for preview
+    var body = latex.trim();
+    
+    // Handle typos like \fras
+    body = body.replace(/\\fras(?=[^a-zA-Z]|$)/g, '\\frac');
+    
+    // Handle specific mapping: \overset{!}{=} -> \neq (consistent with HWP output)
+    body = body.replace(/\\overset\s*{\s*!\s*}\s*{\s*`?=`?\s*}/g, '\\neq');
+    
+    // Strip delimiters for KaTeX
+    body = stripDelimiters(body);
+    
     if (!body) { preview.innerHTML = PLACEHOLDER; return; }
     if (typeof katex === 'undefined') {
       preview.innerHTML = '<span class="placeholder">렌더러 로딩 중…</span>';
