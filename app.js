@@ -79,6 +79,46 @@
     isPasting = true;
   });
 
+  var UNICODE_TO_HWP = {
+    '∫': 'int ', '∬': 'dint ', '∭': 'tint ', '∮': 'oint ',
+    '∑': 'sum ', '∏': 'prod ', '∂': 'partial ', '∞': 'inf ',
+    '≈': 'approx ', '≠': '!= ', '≡': 'equiv ', '≤': '<= ', '≥': '>= ',
+    'α': 'alpha ', 'β': 'beta ', 'γ': 'gamma ', 'δ': 'delta ', 'ε': 'epsilon ',
+    'ζ': 'zeta ', 'η': 'eta ', 'θ': 'theta ', 'ι': 'iota ', 'κ': 'kappa ',
+    'λ': 'lambda ', 'μ': 'mu ', 'ν': 'nu ', 'ξ': 'xi ', 'π': 'pi ',
+    'ρ': 'rho ', 'σ': 'sigma ', 'τ': 'tau ', 'υ': 'upsilon ', 'φ': 'phi ',
+    'χ': 'chi ', 'ψ': 'psi ', 'ω': 'omega ',
+    'Γ': 'Gamma ', 'Δ': 'Delta ', 'Θ': 'Theta ', 'Λ': 'Lambda ', 'Ξ': 'Xi ',
+    'Π': 'Pi ', 'Σ': 'Sigma ', 'Υ': 'Upsilon ', 'Φ': 'Phi ', 'Ψ': 'Psi ', 'Ω': 'Omega ',
+    '→': '-> ', '←': '<- ', '↑': 'uparrow ', '↓': 'downarrow ', '↔': '<-> ',
+    '−': '- ', '×': 'times ', '÷': 'div ', '±': '+- ', '√': 'sqrt ', '∝': 'propto ',
+    '∈': 'in ', '∉': 'notin ', '∪': 'union ', '∩': 'inter ', '⊂': 'subset ',
+    '⊃': 'supset ', '⊆': 'subseteq ', '⊇': 'supseteq '
+  };
+
+  function fallbackConvert(text) {
+    var isGAS = /\u200B/.test(text);
+    
+    // Replace unicodes with HWP keywords
+    var converted = text.split('').map(function(c) {
+      return UNICODE_TO_HWP[c] || c;
+    }).join('');
+
+    if (isGAS) {
+      // GAS: try to format `A \n B \n \u200b` as `{B}_{A}` to loosely group fractions/scripts
+      converted = converted.replace(/([^\n]+)\n([^\n]+)\n\u200B\n?/g, function(match, p1, p2) {
+        return '{' + p2.trim() + '}_{' + p1.trim() + '} ';
+      });
+      converted = converted.replace(/\u200B/g, ' ').replace(/\n/g, ' ');
+      converted = converted.replace(/\s+/g, ' ').trim();
+      return "/* Google AI Studio 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */\n" + converted;
+    } else {
+      // ChatGPT
+      converted = converted.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+      return "/* ChatGPT 복구 (불완전 - 위/아래 첨자 수동 수정 필요) */\n" + converted;
+    }
+  }
+
   // 입력에서 수식 구분자($$, $, \[ \], \( \))를 제거 (미리보기용)
   function stripDelimiters(s) {
     s = s.trim();
@@ -142,8 +182,8 @@
       if (isPasting) {
         showWarningModal();
       }
-      output.textContent = "⚠️ 렌더링된 수식이 감지되었습니다.\n위/아래 첨자 구조가 손실되어 정상적인 HWP 변환이 불가능합니다.\n원본 LaTeX 코드를 다시 붙여넣어 주세요.";
-      output.style.color = "#c0392b";
+      output.textContent = fallbackConvert(val);
+      output.style.color = "#d35400"; // Orange color to indicate warning/fallback
       renderPreview(val);
       clearTimeout(autoCopyTimer);
     } else {
