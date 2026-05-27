@@ -345,6 +345,14 @@
     if (name === 'mathbf' || name === 'boldsymbol' || name === 'bold' || name === 'textbf') {
       return { text: 'bold ' + readArg(tokens, pos), keyword: true };
     }
+    // 캘리그래픽/이중선체(blackboard)/필기체/세리프 등 — 한글 수식엔 전용 글꼴이
+    // 없으므로(rm/it/bold/scale만 지원) 글꼴 장식은 버리고 글자(인자)만 남긴다.
+    // 이렇게 하지 않으면 mathcal/mathbb 등 키워드가 그대로 노출돼 한글에서 깨진다.
+    if (name === 'mathcal' || name === 'mathbb' || name === 'mathscr' ||
+        name === 'mathfrak' || name === 'mathsf' || name === 'mathtt' ||
+        name === 'mathit' || name === 'mathnormal') {
+      return { text: readArg(tokens, pos), keyword: true };
+    }
 
     // Ignore structural formatting commands in HWP
     if (name === 'hline' || name === 'vline') return null;

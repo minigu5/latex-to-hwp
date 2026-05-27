@@ -107,3 +107,17 @@ test('AI 전용 오타/패턴 대응', () => {
   // 텍스트 섞임 및 한글 지원
   assert.strictEqual(convert('안녕하세요 $$\\frac{1}{2}$$'), '"안녕하세요" {1} over {2}');
 });
+
+test('수식 글꼴 명령: 한글에 없는 글꼴은 글자만 남김 (mathbf만 bold)', () => {
+  // 캘리그래픽/이중선체/필기체/세리프 → 글꼴 장식 버리고 글자만 (키워드 노출 금지)
+  assert.strictEqual(convert('\\mathcal{D}'), 'D');
+  assert.strictEqual(convert('\\mathbb{R}'), 'R');
+  assert.strictEqual(convert('\\mathscr{L}'), 'L');
+  assert.strictEqual(convert('\\mathfrak{g}'), 'g');
+  // 첨자는 보존되어야 한다
+  assert.strictEqual(convert('\\mathbb{R}^n'), 'R ^{n}');
+  // mathbf 는 한글이 지원하므로 bold 유지
+  assert.strictEqual(convert('\\mathbf{x}'), 'bold x');
+  // 실제 사용 맥락 (Grok 보고 사례)
+  assert.strictEqual(convert('f:\\mathcal{D}\\to\\mathbb{R}'), 'f : D rarrow R');
+});
