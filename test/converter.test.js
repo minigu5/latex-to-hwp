@@ -100,11 +100,11 @@ test('overset / underset 지원', () => {
   // 특정 매핑: \overset{!}{=} -> !=
   assert.strictEqual(convert('\\overset{!}{=}'), '!=');
   // 일반 overset
-  assert.strictEqual(convert('\\overset{a}{b}'), '{a} atop {b}');
+  assert.strictEqual(convert('\\overset{a}{b}'), 'REL b {a} {}');
   // underset + lim
   assert.strictEqual(convert('\\underset{x \\to 0}{\\lim}'), 'lim _{x rarrow 0}');
   // 일반 underset
-  assert.strictEqual(convert('\\underset{a}{b}'), '{b} atop {a}');
+  assert.strictEqual(convert('\\underset{a}{b}'), 'REL b {} {a}');
 });
 
 test('underbrace / overbrace (라벨을 앞, 본문을 뒤로)', () => {
