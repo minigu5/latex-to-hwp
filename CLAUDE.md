@@ -2,8 +2,18 @@
 
 이 파일은 이 저장소에서 작업하는 Claude Code(및 기여자)를 위한 안내서입니다.
 
-## 프로젝트 목적
+## ⚠️ 중요: 저장소 관리 절대 원칙
+**본 프로젝트는 다중 저장소 구조를 가집니다. 다음 규칙을 어길 시 데이터 손실이나 저장소 오염이 발생할 수 있습니다.**
 
+1.  **크롬 확장 프로그램 (`/chrome-extension`)**:
+    *   **로컬 파일은 절대 삭제하지 마십시오.** (푸시 후에도 유지)
+    *   **메인 GitHub 저장소(`latex-to-hwp`)에 이 폴더를 절대 커밋/푸시하지 마십시오.**
+    *   이 폴더는 오직 별도 저장소([minigu5/latex-to-hwp-extension](https://github.com/minigu5/latex-to-hwp-extension))로만 관리합니다.
+2.  **동기화**: `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`로 수동 복사해야 합니다.
+3.  상세 내용은 [**`REPO_MANAGEMENT.md`**](./REPO_MANAGEMENT.md)를 반드시 먼저 읽으십시오.
+
+## 프로젝트 목적
+...
 인공지능(ChatGPT, Claude 등)이 출력하는 **Markdown LaTeX 수식**을, **한컴오피스 한글(HWP)의 수식 편집기 문법**으로 변환한다.
 
 LaTeX 문법과 한글 수식 편집기 문법이 서로 호환되지 않아, AI가 만든 수식을 한글 문서에 복사·붙여넣기 하면 깨진다. 이 프로그램은 그 간극을 자동으로 메워, 변환 결과를 한글 수식 편집기에 붙여넣으면 **즉시 올바른 수식으로 렌더링**되도록 한다.
