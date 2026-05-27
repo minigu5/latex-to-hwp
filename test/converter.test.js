@@ -70,6 +70,12 @@ test('함수는 그대로, \\left \\right는 LEFT(/RIGHT)로', () => {
   assert.strictEqual(convert('\\sin x'), 'sin x');
   assert.strictEqual(convert('\\left( x \\right)'), 'LEFT( x RIGHT)');
   assert.strictEqual(convert('\\left[ x \\right]'), 'LEFT[ x RIGHT]');
+  // \left. 는 빈 구분자(.)를 보존, \right| 의 vert는 키워드와 공백으로 분리한다.
+  // (표시상 사용자 골든 'LEFT. {df} over {dx} RIGHT | _{x=a}' 와 동일)
+  assert.strictEqual(
+    convert('\\left. \\frac{df}{dx} \\right|_{x=a}'),
+    'LEFT. {d f} over {d x} RIGHT | _{x `=` a}'
+  );
 });
 
 test('수식 구분자($$, $, \\[ \\])는 제거', () => {
@@ -99,6 +105,15 @@ test('overset / underset 지원', () => {
   assert.strictEqual(convert('\\underset{x \\to 0}{\\lim}'), 'lim _{x rarrow 0}');
   // 일반 underset
   assert.strictEqual(convert('\\underset{a}{b}'), '{b} atop {a}');
+});
+
+test('underbrace / overbrace (라벨을 앞, 본문을 뒤로)', () => {
+  // 표시상 사용자 골든 'UNDERBRACE {`=`r ^{2}} {x ^{2} `+`y ^{2} `+`z ^{2}}' 와 동일
+  assert.strictEqual(
+    convert('\\underbrace{x^2 + y^2 + z^2}_{= r^2}'),
+    'UNDERBRACE {`=` r ^{2}} {x ^{2} `+` y ^{2} `+` z ^{2}}'
+  );
+  assert.strictEqual(convert('\\overbrace{a+b}^{n}'), 'OVERBRACE {n} {a `+` b}');
 });
 
 test('AI 전용 오타/패턴 대응', () => {

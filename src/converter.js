@@ -198,8 +198,7 @@
     if (!t) return '';
     pos.i++;
     if (t.type === 'char' || t.type === 'text') {
-      if (t.value === '.') return ''; // \left. \right. → 구분자 없음
-      return t.value; // ( ) [ ] | 등
+      return t.value; // ( ) [ ] | 등. '.'(빈 구분자)도 그대로 보존해 LEFT./RIGHT. 출력
     }
     if (t.type === 'cmd') {
       var m = {
@@ -211,6 +210,14 @@
       return m.hasOwnProperty(t.value) ? m[t.value] : t.value;
     }
     return '';
+  }
+
+  // left/right 뒤 구분자. vert(|·VERT)는 키워드에 붙으면 한글이 인식하지 못하므로
+  // 공백으로 분리한다. 괄호류·빈 구분자(.)는 키워드에 바로 붙인다.
+  function leftRightDelim(tokens, pos) {
+    var d = readDelim(tokens, pos);
+    if (d === '|' || d === 'VERT') return ' ' + d;
+    return d;
   }
 
   // 단일 항 변환. {text, keyword} 또는 null(공백) 반환.
@@ -276,6 +283,23 @@
       return { text: 'matrix{' + content + '}', keyword: false };
     }
 
+    // underbrace / overbrace — 한글 문법은 라벨을 앞, 본문을 뒤에 둔다.
+    //   \underbrace{본문}_{라벨} → UNDERBRACE {라벨} {본문}
+    //   \overbrace{본문}^{라벨}  → OVERBRACE {라벨} {본문}
+    if (name === 'underbrace' || name === 'overbrace') {
+      var ubBody = readArg(tokens, pos);
+      skipSpaces(tokens, pos);
+      var ubLabel = '';
+      var ubT = peek(tokens, pos);
+      if (ubT && ubT.type === 'ctrl' && (ubT.value === '_' || ubT.value === '^')) {
+        pos.i++;
+        ubLabel = readArg(tokens, pos);
+      }
+      var ubKw = (name === 'underbrace') ? 'UNDERBRACE' : 'OVERBRACE';
+      if (ubLabel !== '') return { text: ubKw + ' {' + ubLabel + '} {' + ubBody + '}', keyword: false };
+      return { text: ubKw + ' {' + ubBody + '}', keyword: false };
+    }
+
     // overset / underset
     if (name === 'overset') {
       var top = readArg(tokens, pos);
@@ -321,8 +345,8 @@
     }
 
     // 큰 괄호 — 정책: LEFT( ... RIGHT) (한글 명세 권장, CONVERSION_RULES.md 4절)
-    if (name === 'left') return { text: 'LEFT' + readDelim(tokens, pos), keyword: false };
-    if (name === 'right') return { text: 'RIGHT' + readDelim(tokens, pos), keyword: false };
+    if (name === 'left') return { text: 'LEFT' + leftRightDelim(tokens, pos), keyword: false };
+    if (name === 'right') return { text: 'RIGHT' + leftRightDelim(tokens, pos), keyword: false };
     if (name === 'bigl' || name === 'bigr' || name === 'Bigl' || name === 'Bigr' ||
         name === 'biggl' || name === 'biggr' || name === 'Biggl' || name === 'Biggr') {
       return { text: readDelim(tokens, pos), keyword: false };
