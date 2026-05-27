@@ -1,3 +1,9 @@
+/**
+ * LaTeX → 한글(HWP) 수식 변환기 웹 앱 메인 로직
+ * 
+ * Copyright (c) 2026 Shin Mingyu
+ * Licensed under the MIT License.
+ */
 'use strict';
 
 (function () {
