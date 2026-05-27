@@ -34,7 +34,7 @@
   // 연산/관계/집합/화살표/기타 기호 매핑
   var SYMBOLS = {
     times: 'times', div: 'div', pm: 'plusminus', mp: 'minusplus', cdot: 'cdot',
-    le: 'leq', leq: 'leq', ge: 'GEQ', geq: 'GEQ', ne: 'neq', neq: 'neq',
+    le: 'leq', leq: 'leq', ge: 'geq', geq: 'geq', ne: 'neq', neq: 'neq',
     equiv: 'equiv', approx: 'approx', sim: 'sim', simeq: 'simeq', cong: 'cong',
     propto: 'propto', doteq: 'doteq', prec: 'prec', succ: 'succ', ll: '<<', gg: '>>',
     in: '` IN `', ni: 'owns', notin: 'notin', subset: 'subset', supset: 'supset',
@@ -55,9 +55,15 @@
     uparrow: 'uparrow', downarrow: 'downarrow', leftrightarrow: 'lrarrow',
     updownarrow: 'udarrow', Leftarrow: 'LARROW', Rightarrow: 'RARROW',
     Uparrow: 'UPARROW', Downarrow: 'DOWNARROW', Leftrightarrow: 'LRARROW',
-    mapsto: 'mapsto', nwarrow: 'nwarrow', nearrow: 'nearrow', swarrow: 'swarrow',
-    searrow: 'searrow', hookleftarrow: 'hookleft', hookrightarrow: 'hookright',
-    Rarr: '` RARROW ``', rarr: 'rarrow'
+    Updownarrow: 'UDARROW', mapsto: 'mapsto',
+    nwarrow: 'nwarrow', nearrow: 'nearrow', swarrow: 'swarrow', searrow: 'searrow',
+    hookleftarrow: 'hookleft', hookrightarrow: 'hookright',
+    // Long arrows
+    longleftarrow: 'larrow', longrightarrow: 'rarrow', longleftrightarrow: 'lrarrow',
+    Longleftarrow: 'LARROW', Longrightarrow: 'RARROW', Longleftrightarrow: 'LRARROW',
+    // Shorthand (common in AI outputs)
+    larr: 'larrow', rarr: 'rarrow', uarr: 'uparrow', darr: 'downarrow', harr: 'lrarrow',
+    Larr: 'LARROW', Rarr: '` RARROW ``', Uarr: 'UPARROW', Darr: 'DOWNARROW', Harr: 'LRARROW'
   };
 
   // 글자 장식 (accent) → 한글 명령
