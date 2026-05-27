@@ -2,7 +2,8 @@
  * LaTeX → 한글(HWP) 수식 편집기 문법 변환기
  * 
  * Copyright (c) 2026 Shin Mingyu
- * Licensed under the MIT License.
+ * Licensed under Custom License (Non-Commercial & Attribution).
+ * See LICENSE file for details.
  *
  * 변환 규칙의 근거는 CONVERSION_RULES.md (한컴 공식 명세 revision 1.2 기반)를 참고.
  * 브라우저(<script src>로 window.LatexToHwp)와 Node(require) 양쪽에서 동작한다.
