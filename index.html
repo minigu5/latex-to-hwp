@@ -4,6 +4,17 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LaTeX 한글 수식 변환기</title>
+  <link rel="icon" type="image/png" href="public/favicon.png" />
+  <script>
+    /* 저장된 테마를 본문 렌더 전에 적용해 깜빡임(FOUC) 방지. 기본값은 라이트 모드. */
+    (function () {
+      try {
+        if (localStorage.getItem('theme') === 'dark') {
+          document.documentElement.setAttribute('data-theme', 'dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet"
     href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css" crossorigin="anonymous" />
   <script defer
@@ -23,6 +34,16 @@
       --muted: #707888;
       --code-bg: #f3f4f7;
     }
+    [data-theme="dark"] {
+      --bg: #181b20;
+      --card: #21252c;
+      --border: #333a45;
+      --accent: #4d82f7;
+      --accent-hover: #6a99f9;
+      --text: #e3e6eb;
+      --muted: #9097a3;
+      --code-bg: #2a2f37;
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
@@ -31,10 +52,33 @@
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
+      transition: background 0.2s, color 0.2s;
     }
-    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; }
-    header h1 { font-size: 1.6rem; margin: 0 0 6px; }
-    header p { color: var(--muted); margin: 0 0 28px; font-size: 0.95rem; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 32px 20px 64px; position: relative; }
+    header h1 { font-size: 1.6rem; margin: 0 0 6px; padding-right: 56px; }
+    header p { color: var(--muted); margin: 0 0 16px; font-size: 0.95rem; }
+    .header-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 26px; }
+    .ext-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      text-decoration: none;
+      color: var(--text);
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 15px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+    }
+    .ext-btn:hover {
+      border-color: var(--accent);
+      box-shadow: 0 3px 12px rgba(47, 109, 246, 0.16);
+      transform: translateY(-1px);
+    }
+    .ext-btn .ext-ico { font-size: 1.1rem; line-height: 1; }
+    .ext-btn .ext-arrow { color: var(--muted); font-size: 0.8rem; }
     .panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -57,7 +101,7 @@
       font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
       font-size: 0.95rem;
       color: var(--text);
-      background: #fff;
+      background: var(--card);
     }
     textarea:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
     .output {
@@ -103,7 +147,7 @@
       border: 1px solid var(--border);
       border-radius: 8px;
       padding: 16px 14px;
-      background: #fff;
+      background: var(--card);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -121,6 +165,31 @@
     .preview .render-error { color: #c0392b; font-size: 0.85rem; font-family: monospace; }
     footer { color: var(--muted); font-size: 0.82rem; text-align: center; margin-top: 28px; }
     footer a { color: var(--accent); text-decoration: none; }
+
+    /* 제작 크레딧 — 평소 연하게, 마우스 올리면 또렷하게 */
+    .credit {
+      text-align: center;
+      margin-top: 72px;
+      opacity: 0.4;
+      transition: opacity 0.8s ease;
+    }
+    .credit:hover { opacity: 1; }
+    .credit-main {
+      margin: 0;
+      font-size: 0.72rem;
+      font-weight: 300;
+      letter-spacing: 0.02em;
+      color: var(--muted);
+    }
+    .credit-main .name { font-weight: 600; color: var(--text); }
+    .credit-main .tool { font-weight: 600; color: var(--accent); }
+    .credit-sub {
+      margin: 5px 0 0;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
 
     /* 이미지 OCR */
     .dropzone {
@@ -159,108 +228,173 @@
     }
     .ocr-progress > i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
 
-    /* Modal Styles */
+    /* ── 경고·해결방안 모달 ── */
     .modal-overlay {
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 20px;
       opacity: 0;
       visibility: hidden;
       transition: opacity 0.2s, visibility 0.2s;
     }
-    .modal-overlay.show {
-      opacity: 1;
-      visibility: visible;
-    }
+    .modal-overlay.show { opacity: 1; visibility: visible; }
     .modal-content {
-      background: #fff;
-      padding: 24px;
-      border-radius: 12px;
-      max-width: 480px;
-      width: 90%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+      position: relative;
+      background: var(--card);
+      padding: 26px 24px 22px;
+      border-radius: 16px;
+      max-width: 460px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
       text-align: center;
+      transform: translateY(12px) scale(0.97);
+      transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    .modal-icon {
-      font-size: 3rem;
-      margin-bottom: 12px;
+    .modal-overlay.show .modal-content { transform: none; }
+    .modal-step { animation: modalStepIn 0.28s ease; }
+    @keyframes modalStepIn {
+      from { opacity: 0; transform: translateX(10px); }
+      to   { opacity: 1; transform: none; }
     }
-    .modal-title {
-      font-size: 1.25rem;
-      font-weight: 700;
-      margin: 0 0 12px;
-      color: #c0392b;
+    .modal-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 10px; }
+    .modal-title { font-size: 1.2rem; font-weight: 800; margin: 0 0 10px; color: var(--text); }
+    .modal-title .warn-accent { color: #e8590c; }
+    .modal-desc { font-size: 0.92rem; color: var(--muted); margin: 0 0 22px; line-height: 1.6; }
+    .modal-desc b { color: var(--text); }
+    .modal-actions { display: flex; flex-direction: column; gap: 10px; }
+    .modal-primary-btn { width: 100%; padding: 12px; font-size: 0.98rem; }
+    .modal-dismiss-btn { width: 100%; padding: 9px; }
+    .modal-dismiss-btn:disabled { color: var(--muted); cursor: not-allowed; opacity: 0.6; }
+    .modal-checkbox-wrapper {
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      font-size: 0.82rem; color: var(--muted); cursor: pointer; margin-top: 2px;
     }
-    .modal-body {
-      font-size: 0.95rem;
-      color: var(--text);
-      margin-bottom: 20px;
-      line-height: 1.5;
+
+    /* 모달 — 해결 방안 단계 */
+    .modal-back {
+      position: absolute; top: 16px; left: 14px;
+      border: none; background: none; cursor: pointer;
+      color: var(--muted); font-size: 0.85rem; font-weight: 600;
+      padding: 5px 8px; border-radius: 7px;
+      transition: color 0.15s, background 0.15s;
+    }
+    .modal-back:hover { color: var(--text); background: var(--code-bg); }
+    .solutions-title { margin-top: 6px; }
+    .solution-tabs {
+      display: flex; gap: 5px; margin: 16px 0 18px;
+      background: var(--code-bg); padding: 4px; border-radius: 11px;
+    }
+    .solution-tab {
+      flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      border: none; background: none; cursor: pointer;
+      padding: 9px 4px; border-radius: 8px;
+      font-size: 0.84rem; font-weight: 700; color: var(--muted);
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .solution-tab .sol-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--border); color: var(--text);
+      font-size: 0.72rem; font-weight: 800;
+      transition: background 0.15s, color 0.15s;
+    }
+    .solution-tab.active { background: var(--card); color: var(--accent); box-shadow: 0 1px 5px rgba(0, 0, 0, 0.12); }
+    .solution-tab.active .sol-num { background: var(--accent); color: #fff; }
+    .solution-panel { text-align: center; }
+    .solution-panel[hidden] { display: none; }
+    .solution-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
+    .solution-lead { font-size: 0.95rem; color: var(--text); margin: 0 0 8px; line-height: 1.55; }
+    .solution-lead b { color: var(--accent); }
+    .solution-sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
+    .solution-cta { display: inline-block; text-decoration: none; padding: 10px 22px; }
+    kbd {
+      display: inline-block; padding: 1px 6px; margin: 0 1px;
+      font-family: inherit; font-size: 0.78rem; color: var(--text);
+      background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px;
     }
     .prompt-box {
-      margin: 16px 0;
+      margin: 0;
       padding: 14px;
       background: rgba(47, 109, 246, 0.08);
       border: 2px dashed var(--accent);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      text-align: left;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 12px; text-align: left;
     }
     .prompt-text {
       color: var(--accent);
-      text-decoration: underline;
-      text-underline-offset: 4px;
-      font-size: 1.05rem;
-      word-break: keep-all;
+      font-size: 0.95rem; font-weight: 600;
+      line-height: 1.5; word-break: keep-all;
     }
-    .prompt-copy-btn {
-      flex-shrink: 0;
-      padding: 6px 12px;
-      font-size: 0.85rem;
-    }
-    .modal-hint {
-      display: block;
-      color: var(--muted);
-      font-size: 0.9rem;
-      margin-top: 8px;
-    }
-    .modal-actions {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-    }
-    .modal-close-btn {
-      width: 100%;
-      padding: 10px;
-    }
-    .modal-close-btn:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-    }
-    .modal-checkbox-wrapper {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 0.85rem;
-      color: var(--muted);
+    .prompt-copy-btn { flex-shrink: 0; padding: 6px 12px; font-size: 0.85rem; }
+    .solutions-footer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
+    .modal-close-btn { width: 100%; padding: 11px; }
+
+    /* 다크 모드 토글 (레이아웃 우측 상단) */
+    .theme-toggle {
+      position: absolute;
+      top: 32px;
+      right: 20px;
+      z-index: 900;
+      border: none;
+      background: none;
+      padding: 0;
       cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
     }
+    .theme-toggle .track {
+      display: block;
+      width: 46px;
+      height: 24px;
+      border-radius: 999px;
+      background: var(--border);
+      position: relative;
+      transition: background 0.2s;
+    }
+    .theme-toggle .thumb {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+    .theme-toggle:focus-visible .track { outline: 2px solid var(--accent); outline-offset: 2px; }
+    [data-theme="dark"] .theme-toggle .track { background: var(--accent); }
+    [data-theme="dark"] .theme-toggle .thumb { transform: translateX(22px); }
   </style>
 </head>
 <body>
   <div class="wrap">
+    <button class="theme-toggle" id="themeToggle" type="button" role="switch"
+      aria-checked="false" aria-label="다크 모드 전환" title="다크 모드 전환">
+      <span class="track"><span class="thumb" aria-hidden="true">☀️</span></span>
+    </button>
     <header>
       <h1>LaTeX → 한글(HWP) 수식 변환기</h1>
       <p>AI가 만든 Markdown LaTeX 수식을 한컴오피스 한글 수식 편집기 문법으로 변환합니다.
         결과를 복사해 한글 수식 편집기에 붙여넣으세요.</p>
+      <div class="header-actions">
+        <a class="ext-btn" href="https://github.com/minigu5/latex-to-hwp-extension"
+          target="_blank" rel="noopener">
+          <span class="ext-ico" aria-hidden="true">🧩</span>
+          크롬 확장 프로그램으로 더 편하게
+          <span class="ext-arrow" aria-hidden="true">↗</span>
+        </a>
+      </div>
     </header>
 
     <div class="panel">
@@ -312,31 +446,106 @@
       변환 규칙은 한컴 공식 명세(한글 문서 파일 형식 - 수식, rev 1.2)를 참고했습니다 ·
       <a href="https://github.com/minigu5/latex-to-hwp" target="_blank" rel="noopener">GitHub</a>
     </footer>
+
+    <div class="credit">
+      <p class="credit-main">Crafted by <span class="name">Shin Mingyu</span>
+        with <span class="tool">Claude Code &amp; Gemini CLI</span></p>
+      <p class="credit-sub">Powered by Vercel</p>
+    </div>
   </div>
 
   <div class="modal-overlay" id="warningModal">
     <div class="modal-content">
-      <div class="modal-icon">⚠️</div>
-      <h2 class="modal-title">렌더링된 수식 감지됨</h2>
-      <div class="modal-body">
-        화면에 보여지는 수식을 그냥 복사하셨나요?<br>
-        이 경우 위/아래 첨자 정보가 사라져서 제대로 변환할 수 없습니다.<br><br>
-        <div class="prompt-box">
-          <strong class="prompt-text">답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘.<br>복사 가능하도록 latex 코드 블록을 사용해 줘.</strong>
-          <button class="btn prompt-copy-btn" id="promptCopyBtn">복사</button>
+
+      <!-- 1단계: 경고 -->
+      <div class="modal-step" id="modalStepWarn">
+        <div class="modal-icon">⚠️</div>
+        <h2 class="modal-title"><span class="warn-accent">렌더링된 수식</span>이 감지됐어요</h2>
+        <p class="modal-desc">
+          화면에 보이는 수식을 그대로 복사하면 <b>위·아래 첨자 정보가 사라져</b>
+          제대로 변환되지 않아요.<br>올바르게 입력하는 방법을 알려드릴게요.
+        </p>
+        <div class="modal-actions">
+          <button class="btn modal-primary-btn" id="showSolutionsBtn" type="button">해결 방안 보기</button>
+          <button class="btn ghost modal-dismiss-btn" id="modalDismissBtn" type="button">그냥 닫기</button>
         </div>
-        <span class="modal-hint">AI에게 위 문구를 입력해보세요.</span>
       </div>
-      <div class="modal-actions">
-        <button class="btn modal-close-btn" id="modalCloseBtn">확인했습니다</button>
-        <label class="modal-checkbox-wrapper">
-          <input type="checkbox" id="modalHideTodayCheckbox"> 오늘 하루 보지 않기
-        </label>
+
+      <!-- 2단계: 해결 방안 -->
+      <div class="modal-step" id="modalStepSolutions" hidden>
+        <button class="modal-back" id="modalBackBtn" type="button">← 뒤로</button>
+        <h2 class="modal-title solutions-title">3가지 해결 방법</h2>
+
+        <div class="solution-tabs" role="tablist">
+          <button class="solution-tab active" data-sol="1" type="button" role="tab" aria-selected="true">
+            <span class="sol-num">1</span>프롬프트
+          </button>
+          <button class="solution-tab" data-sol="2" type="button" role="tab" aria-selected="false">
+            <span class="sol-num">2</span>이미지 캡처
+          </button>
+          <button class="solution-tab" data-sol="3" type="button" role="tab" aria-selected="false">
+            <span class="sol-num">3</span>크롬 확장
+          </button>
+        </div>
+
+        <!-- 방안 1: 프롬프트 입력 -->
+        <div class="solution-panel" data-sol="1">
+          <p class="solution-lead">AI에게 아래 문구를 보내 <b>순수 LaTeX 코드</b>로 다시 받으세요.</p>
+          <div class="prompt-box">
+            <strong class="prompt-text">답변에서 수식은 렌더링 하지 말고 순수 LaTeX 코드로 작성해 줘.<br>복사 가능하도록 latex 코드 블록을 사용해 줘.</strong>
+            <button class="btn prompt-copy-btn" id="promptCopyBtn" type="button">복사</button>
+          </div>
+        </div>
+
+        <!-- 방안 2: 이미지 캡처 -->
+        <div class="solution-panel" data-sol="2" hidden>
+          <div class="solution-icon">📷</div>
+          <p class="solution-lead">수식을 <b>이미지로 캡처</b>해 붙여넣으면 OCR이 자동으로 인식해요.</p>
+          <p class="solution-sub">화면 캡처 단축키 — Mac <kbd>⌘</kbd><kbd>⇧</kbd><kbd>4</kbd> · Windows <kbd>⊞</kbd><kbd>Shift</kbd><kbd>S</kbd></p>
+          <button class="btn solution-cta" id="gotoOcrBtn" type="button">이미지로 인식하기</button>
+        </div>
+
+        <!-- 방안 3: 크롬 확장 프로그램 -->
+        <div class="solution-panel" data-sol="3" hidden>
+          <div class="solution-icon">🧩</div>
+          <p class="solution-lead"><b>크롬 확장 프로그램</b>을 설치하면 AI 답변의 수식을 한 번에 변환할 수 있어요.</p>
+          <p class="solution-sub">아직 웹스토어 미등록 — GitHub에서 내려받아 개발자 모드로 설치하세요.</p>
+          <a class="btn solution-cta" href="https://github.com/minigu5/latex-to-hwp-extension"
+            target="_blank" rel="noopener">확장 프로그램 받기 (GitHub) ↗</a>
+        </div>
+
+        <div class="solutions-footer">
+          <button class="btn modal-close-btn" id="modalDoneBtn" type="button">닫기</button>
+          <label class="modal-checkbox-wrapper">
+            <input type="checkbox" id="modalHideTodayCheckbox"> 오늘 하루 보지 않기
+          </label>
+        </div>
       </div>
+
     </div>
   </div>
 
   <script defer src="src/converter.js"></script>
   <script defer src="app.js"></script>
+  <script>
+    /* 다크 모드 토글: 선택값을 localStorage에 저장. 기본값은 라이트 모드. */
+    (function () {
+      var btn = document.getElementById('themeToggle');
+      var thumb = btn.querySelector('.thumb');
+      function apply(dark) {
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+        btn.setAttribute('aria-checked', dark ? 'true' : 'false');
+        thumb.textContent = dark ? '🌙' : '☀️';
+      }
+      var dark = false;
+      try { dark = localStorage.getItem('theme') === 'dark'; } catch (e) {}
+      apply(dark);
+      btn.addEventListener('click', function () {
+        dark = !dark;
+        apply(dark);
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch (e) {}
+      });
+    })();
+  </script>
 </body>
 </html>

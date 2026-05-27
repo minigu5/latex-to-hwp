@@ -10,9 +10,18 @@
 
   // Modal elements
   var modal = document.getElementById('warningModal');
-  var modalCloseBtn = document.getElementById('modalCloseBtn');
+  var modalStepWarn = document.getElementById('modalStepWarn');
+  var modalStepSolutions = document.getElementById('modalStepSolutions');
+  var showSolutionsBtn = document.getElementById('showSolutionsBtn');
+  var modalDismissBtn = document.getElementById('modalDismissBtn');
+  var modalBackBtn = document.getElementById('modalBackBtn');
+  var modalDoneBtn = document.getElementById('modalDoneBtn');
   var modalHideCheckbox = document.getElementById('modalHideTodayCheckbox');
   var promptCopyBtn = document.getElementById('promptCopyBtn');
+  var gotoOcrBtn = document.getElementById('gotoOcrBtn');
+  var solutionTabs = modal.querySelectorAll('.solution-tab');
+  var solutionPanels = modal.querySelectorAll('.solution-panel');
+  var modalDismissTimer = null;
 
   var DEFAULT_HINT = copyHint.textContent;
   var PLACEHOLDER = '<span class="placeholder">수식을 입력하면 여기에 렌더링됩니다.</span>';
@@ -36,30 +45,71 @@
     }
   }
 
+  function showModalStep(step) {
+    var solutions = step === 'solutions';
+    modalStepWarn.hidden = solutions;
+    modalStepSolutions.hidden = !solutions;
+  }
+
+  function selectSolution(n) {
+    for (var i = 0; i < solutionTabs.length; i++) {
+      var active = solutionTabs[i].getAttribute('data-sol') === n;
+      solutionTabs[i].classList.toggle('active', active);
+      solutionTabs[i].setAttribute('aria-selected', active ? 'true' : 'false');
+    }
+    for (var j = 0; j < solutionPanels.length; j++) {
+      solutionPanels[j].hidden = solutionPanels[j].getAttribute('data-sol') !== n;
+    }
+  }
+
   function showWarningModal() {
     if (!shouldShowWarning()) return;
     modalHideCheckbox.checked = false;
+    showModalStep('warn');
+    selectSolution('1');
     modal.classList.add('show');
 
-    // Disable confirmation button for 2 seconds
+    // 경고를 읽도록 '그냥 닫기'만 2초간 비활성화 (해결 방안 보기는 즉시 가능)
     var secondsLeft = 2;
-    modalCloseBtn.disabled = true;
-    var originalText = "확인했습니다";
-    modalCloseBtn.textContent = originalText + " (" + secondsLeft + ")";
-
-    var timer = setInterval(function() {
+    modalDismissBtn.disabled = true;
+    var base = '그냥 닫기';
+    modalDismissBtn.textContent = base + ' (' + secondsLeft + ')';
+    clearInterval(modalDismissTimer);
+    modalDismissTimer = setInterval(function () {
       secondsLeft--;
       if (secondsLeft > 0) {
-        modalCloseBtn.textContent = originalText + " (" + secondsLeft + ")";
+        modalDismissBtn.textContent = base + ' (' + secondsLeft + ')';
       } else {
-        clearInterval(timer);
-        modalCloseBtn.disabled = false;
-        modalCloseBtn.textContent = originalText;
+        clearInterval(modalDismissTimer);
+        modalDismissBtn.disabled = false;
+        modalDismissBtn.textContent = base;
       }
     }, 1000);
   }
 
-  modalCloseBtn.addEventListener('click', hideWarningModal);
+  showSolutionsBtn.addEventListener('click', function () { showModalStep('solutions'); });
+  modalBackBtn.addEventListener('click', function () { showModalStep('warn'); });
+  modalDismissBtn.addEventListener('click', hideWarningModal);
+  modalDoneBtn.addEventListener('click', hideWarningModal);
+
+  for (var ti = 0; ti < solutionTabs.length; ti++) {
+    (function (tab) {
+      tab.addEventListener('click', function () { selectSolution(tab.getAttribute('data-sol')); });
+    })(solutionTabs[ti]);
+  }
+
+  // 방안 2: 이미지 OCR 영역으로 이동 (모달 닫고 드롭존을 잠깐 강조)
+  if (gotoOcrBtn) {
+    gotoOcrBtn.addEventListener('click', function () {
+      hideWarningModal();
+      var dz = document.getElementById('dropzone');
+      if (dz) {
+        dz.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        dz.classList.add('dragover');
+        setTimeout(function () { dz.classList.remove('dragover'); }, 1200);
+      }
+    });
+  }
 
   if (promptCopyBtn) {
     promptCopyBtn.addEventListener('click', function () {
