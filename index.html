@@ -264,7 +264,7 @@
     .modal-icon { font-size: 2.6rem; line-height: 1; margin-bottom: 10px; }
     .modal-title { font-size: 1.2rem; font-weight: 800; margin: 0 0 10px; color: var(--text); }
     .modal-title .warn-accent { color: #e8590c; }
-    .modal-desc { font-size: 0.92rem; color: var(--muted); margin: 0 0 22px; line-height: 1.6; }
+    .modal-desc { font-size: 0.92rem; color: var(--muted); margin: 0 0 22px; line-height: 1.6; word-break: keep-all; }
     .modal-desc b { color: var(--text); }
     .modal-actions { display: flex; flex-direction: column; gap: 10px; }
     .modal-primary-btn { width: 100%; padding: 12px; font-size: 0.98rem; }
@@ -308,15 +308,10 @@
     .solution-panel { text-align: center; }
     .solution-panel[hidden] { display: none; }
     .solution-icon { font-size: 2rem; margin-bottom: 8px; line-height: 1; }
-    .solution-lead { font-size: 0.95rem; color: var(--text); margin: 0 0 8px; line-height: 1.55; }
+    .solution-lead { font-size: 0.95rem; color: var(--text); margin: 0 0 8px; line-height: 1.55; word-break: keep-all; }
     .solution-lead b { color: var(--accent); }
-    .solution-sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; line-height: 1.55; }
+    .solution-sub { font-size: 0.82rem; color: var(--muted); margin: 0 0 16px; line-height: 1.55; word-break: keep-all; }
     .solution-cta { display: inline-block; text-decoration: none; padding: 10px 22px; }
-    kbd {
-      display: inline-block; padding: 1px 6px; margin: 0 1px;
-      font-family: inherit; font-size: 0.78rem; color: var(--text);
-      background: var(--code-bg); border: 1px solid var(--border); border-radius: 5px;
-    }
     .prompt-box {
       margin: 0;
       padding: 14px;
@@ -501,7 +496,6 @@
         <div class="solution-panel" data-sol="2" hidden>
           <div class="solution-icon">📷</div>
           <p class="solution-lead">수식을 <b>이미지로 캡처</b>해 붙여넣으면 OCR이 자동으로 인식해요.</p>
-          <p class="solution-sub">화면 캡처 단축키 — Mac <kbd>⌘</kbd><kbd>⇧</kbd><kbd>4</kbd> · Windows <kbd>⊞</kbd><kbd>Shift</kbd><kbd>S</kbd></p>
           <button class="btn solution-cta" id="gotoOcrBtn" type="button">이미지로 인식하기</button>
         </div>
 
