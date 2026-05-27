@@ -9,7 +9,7 @@ node_modules/
 *.pdf
 
 # 크롬 확장 — 별도 저장소(minigu5/latex-to-hwp-extension)에서 관리
-# /chrome-extension/
+/chrome-extension/
 /chrome-extension.crx
 
 # 개인 키 등 비밀 (확장 패키징 키 포함)
