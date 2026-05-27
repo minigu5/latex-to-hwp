@@ -56,10 +56,6 @@ convert('$$\\frac{2\\pi}{24}(t - \\phi_1)$$');
 - **라이선스 주의:** 모델 가중치는 **AGPL-3.0**입니다(런타임 라이브러리 transformers.js는 Apache-2.0). 공개 호스팅 시 소스 공개 의무가 생길 수 있으므로 유의하세요. 이 저장소 코드 자체는 MIT입니다.
 - **요구 사항:** 모듈 Web Worker를 지원하는 최신 브라우저(Chrome/Edge/Firefox/Safari 최신 버전). `file://` 직접 열기에서는 워커가 동작하지 않을 수 있으니 정적 서버(아래 배포 또는 `python3 -m http.server`)로 여세요.
 
-## 배포
-
-빌드가 필요 없는 정적 사이트라 Vercel 등에 그대로 올릴 수 있습니다. GitHub 연동 자동 배포 방법은 [`VERCEL_DEPLOY.md`](./VERCEL_DEPLOY.md)를 참고하세요. transformers.js와 OCR 모델은 모두 CDN/HuggingFace Hub에서 클라이언트로 로드되므로, 별도 서버나 빌드 단계는 필요 없습니다.
-
 ## 테스트
 
 ```
