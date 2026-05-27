@@ -57,7 +57,7 @@
     Uparrow: 'UPARROW', Downarrow: 'DOWNARROW', Leftrightarrow: 'LRARROW',
     mapsto: 'mapsto', nwarrow: 'nwarrow', nearrow: 'nearrow', swarrow: 'swarrow',
     searrow: 'searrow', hookleftarrow: 'hookleft', hookrightarrow: 'hookright',
-    Rarr: '` RARROW ``'
+    Rarr: '` RARROW ``', rarr: 'rarrow'
   };
 
   // 글자 장식 (accent) → 한글 명령
