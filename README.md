@@ -12,7 +12,7 @@ LaTeX와 한글 수식 편집기는 문법이 서로 호환되지 않아, AI가 
 단, 이미지 OCR은 모듈 Web Worker를 사용하므로 정적 서버를 통해 여세요.
 
 ```bash
-python3 -m http.server   # 로컬 서버 예시
+open index.html        # macOS  
 ```
 
 ### 코드에서 직접
