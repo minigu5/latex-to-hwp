@@ -627,12 +627,36 @@
   document.addEventListener('paste', function (e) {
     var items = e.clipboardData && e.clipboardData.items;
     if (!items) return;
+
+    var hasText = false;
+    var imageBlob = null;
     for (var i = 0; i < items.length; i++) {
-      if (items[i].type && items[i].type.indexOf('image') === 0) {
-        var blob = items[i].getAsFile();
-        if (blob) { e.preventDefault(); runOcr(blob); }
-        return;
+      if (items[i].type === 'text/plain') hasText = true;
+      else if (!imageBlob && items[i].type && items[i].type.indexOf('image') === 0) {
+        imageBlob = items[i].getAsFile();
       }
+    }
+
+    // HWP 등 서식 있는 텍스트 복사 시 이미지도 함께 포함되므로,
+    // text/plain이 있으면 이미지 OCR을 건너뛴다.
+    if (hasText) {
+      if (document.activeElement !== input) {
+        // 입력 필드 밖에서 붙여넣기 → 서식 제거 후 입력에 삽입
+        var text = e.clipboardData.getData('text/plain');
+        if (text.trim()) {
+          e.preventDefault();
+          input.value = text;
+          input.dispatchEvent(new Event('input'));
+          input.focus();
+        }
+      }
+      // 입력 필드에 포커스 중이면 브라우저 기본 동작(plain text 삽입)에 맡긴다
+      return;
+    }
+
+    if (imageBlob) {
+      e.preventDefault();
+      runOcr(imageBlob);
     }
   });
 
