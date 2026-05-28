@@ -166,30 +166,72 @@
     footer { color: var(--muted); font-size: 0.82rem; text-align: center; margin-top: 28px; }
     footer a { color: var(--accent); text-decoration: none; }
 
-    /* 제작 크레딧 — 평소 연하게, 마우스 올리면 또렷하게 */
-    .credit {
-      text-align: center;
-      margin-top: 72px;
-      opacity: 0.4;
-      transition: opacity 0.8s ease;
+    /* 사이트 푸터 — wrap 바깥의 풀-width 바 */
+    .site-footer {
+      margin-top: 64px;
+      border-top: 1px solid var(--border);
+      background: var(--card);
     }
-    .credit:hover { opacity: 1; }
-    .credit-main {
-      margin: 0;
-      font-size: 0.72rem;
-      font-weight: 300;
-      letter-spacing: 0.02em;
+    .site-footer-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 32px 20px 28px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 36px;
+    }
+    @media (max-width: 560px) {
+      .site-footer-inner { grid-template-columns: 1fr; gap: 22px; }
+    }
+    .footer-col { min-width: 0; }
+    .footer-title {
+      margin: 0 0 10px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+    .footer-item {
+      margin: 0 0 6px;
+      font-size: 0.8rem;
       color: var(--muted);
+      line-height: 1.55;
     }
-    .credit-main .name { font-weight: 600; color: var(--text); }
-    .credit-main .tool { font-weight: 600; color: var(--accent); }
-    .credit-sub {
-      margin: 5px 0 0;
-      font-size: 0.62rem;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
+    .footer-item:last-child { margin-bottom: 0; }
+    .footer-item a {
+      color: var(--text);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-item a:hover { color: var(--accent); }
+    .footer-key {
+      color: var(--text);
+      font-weight: 600;
+      margin-right: 6px;
+    }
+    .site-footer-bottom {
+      background: var(--code-bg);
+      border-top: 1px solid var(--border);
+    }
+    .site-footer-bottom-inner {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 0.76rem;
       color: var(--muted);
+      flex-wrap: wrap;
     }
+    .footer-policy {
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+    .footer-policy:hover { color: var(--accent); }
+    .footer-dot { opacity: 0.5; }
 
     /* 이미지 OCR */
     .dropzone {
@@ -581,12 +623,36 @@
 
     </div><!-- /tabFile -->
 
-    <div class="credit">
-      <p class="credit-main">Crafted by <span class="name">Shin Mingyu</span>
-        with <span class="tool">Claude Code &amp; Gemini CLI</span></p>
-      <p class="credit-sub">Powered by Vercel</p>
-    </div>
   </div>
+
+  <footer class="site-footer">
+    <div class="site-footer-inner">
+      <div class="footer-col">
+        <h4 class="footer-title">Contact</h4>
+        <p class="footer-item"><span class="footer-key">개발자</span>신민규</p>
+        <p class="footer-item"><span class="footer-key">Email</span>
+          <a href="mailto:seong381400@gmail.com">seong381400@gmail.com</a>
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4 class="footer-title">개발자의 다른 사이트</h4>
+        <p class="footer-item">
+          <a href="https://movie-ticket-ten-wine.vercel.app/" target="_blank" rel="noopener">
+            영화대교 예매 시스템 ↗
+          </a>
+        </p>
+      </div>
+    </div>
+
+    <div class="site-footer-bottom">
+      <div class="site-footer-bottom-inner">
+        <a href="privacy.html" class="footer-policy">개인정보처리방침</a>
+        <span class="footer-dot">·</span>
+        <span>© 2026 휩 — LaTeX to HWP Converter. All rights reserved.</span>
+      </div>
+    </div>
+  </footer>
 
   <div class="modal-overlay" id="warningModal">
     <div class="modal-content">
