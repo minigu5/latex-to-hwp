@@ -26,6 +26,8 @@
 
   // 수식 글자 크기를 본문 대비 키울 값(hpt 단위, 100 = 1pt).
   var EQUATION_SIZE_BUMP_HPT = 100;
+  // 수식 글꼴 (한컴 수식 편집기 내부 렌더링 폰트).
+  var EQUATION_FONT = 'HancomEQN';
 
   // ── 의존성 해석 ────────────────────────────────────────────────
   function resolveDeps(deps) {
@@ -285,6 +287,7 @@
     eq.setAttribute('letterSpacing', String(style.letterSpacing));
     eq.setAttribute('lineThickness', String(style.lineThickness));
     eq.setAttribute('baseLine', '0');
+    eq.setAttribute('font', EQUATION_FONT);
 
     var sz = doc.createElementNS(HP_NS, 'hp:sz');
     sz.setAttribute('width', '0');
