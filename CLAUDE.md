@@ -13,7 +13,7 @@
 3.  상세 내용은 [**`REPO_MANAGEMENT.md`**](./REPO_MANAGEMENT.md)를 반드시 먼저 읽으십시오.
 
 ## 프로젝트 목적
-...
+
 인공지능(ChatGPT, Claude 등)이 출력하는 **Markdown LaTeX 수식**을, **한컴오피스 한글(HWP)의 수식 편집기 문법**으로 변환한다.
 
 LaTeX 문법과 한글 수식 편집기 문법이 서로 호환되지 않아, AI가 만든 수식을 한글 문서에 복사·붙여넣기 하면 깨진다. 이 프로그램은 그 간극을 자동으로 메워, 변환 결과를 한글 수식 편집기에 붙여넣으면 **즉시 올바른 수식으로 렌더링**되도록 한다.
@@ -34,11 +34,28 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 
 ## 사용 형태 / 기술 스택
 
-- **형태**: 브라우저에서 동작하는 단일 웹 페이지. 입력창에 LaTeX 수식을 붙여넣으면 변환 결과가 표시되고, "복사" 버튼으로 클립보드에 담아 한글 수식 편집기에 붙여넣는다. **수식 이미지를 업로드/붙여넣기하면 브라우저에서 OCR로 LaTeX를 인식해 같은 변환 흐름에 태운다(아래 "이미지 OCR" 참고).**
+- **형태**: 브라우저에서 동작하는 단일 웹 페이지. **두 가지 탭**으로 구성된다.
+  - **텍스트 변환 탭**: 입력창에 LaTeX 수식을 붙여넣으면 변환 결과가 표시되고, "복사" 버튼으로 클립보드에 담아 한글 수식 편집기에 붙여넣는다. 수식 이미지를 업로드/붙여넣기하면 브라우저에서 OCR로 LaTeX를 인식해 같은 변환 흐름에 태운다.
+  - **파일 변환 탭**: HWP 또는 HWPX 파일을 업로드하면 문서 안의 텍스트 LaTeX 수식을 찾아 한컴 수식 개체(`hp:equation`)로 교체한 뒤 새 HWPX 파일로 내보낸다. 자세한 동작 방식은 아래 "파일 변환" 참고.
 - **크롬 확장 프로그램**: `chrome-extension/` 폴더의 내용은 별도의 GitHub 저장소([minigu5/latex-to-hwp-extension](https://github.com/minigu5/latex-to-hwp-extension))에 독립적으로 관리 및 업로드되어야 한다.
 - **언어**: JavaScript (프레임워크/빌드 도구 없이 순수 HTML+CSS+JS로 시작. 의존성 최소화).
 - **배포**: 정적 파일이므로 파일을 브라우저로 직접 열거나 GitHub Pages 등 정적 호스팅으로 제공 가능.
 - **구조 원칙**: 변환 로직(파서/변환기)은 UI와 분리된 순수 함수 모듈로 둔다. 그래야 테스트하기 쉽고, 나중에 CLI나 다른 인터페이스로 재사용할 수 있다.
+
+## 파일 구조
+
+```
+index.html              메인 UI (탭 2개: 텍스트 변환 / 파일 변환)
+app.js                  UI 이벤트 처리, OCR 흐름, 파일 변환 흐름
+src/
+  converter.js          LaTeX → 한글 수식 변환 엔진 (순수 함수, window.LatexToHwp)
+  hwpx-convert.js       HWPX(ZIP+XML) 파싱·수식 개체 삽입·재압축 (window.HwpxConvert)
+  ocr-worker.js         Web Worker — FormulaNet 모델 추론
+vendor/
+  jszip.min.js          JSZip v3.10.1 (hwpx-convert.js 의존성, MIT)
+test/
+  converter.test.js     변환 엔진 골든 테스트
+```
 
 ## 한글(HWP) 수식 편집기 문법 핵심
 
@@ -54,7 +71,7 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 - **루트**: `sqrt {x}`, n제곱근은 `root n of {x}`.
 - **함수**: `sin`, `cos`, `tan`, `log`, `ln`, `lim`, `exp` 등 이름 그대로.
 - **합/곱/적분**: `sum`, `prod`, `int`. 범위는 첨자로 → `sum _{i=1} ^{n}`.
-- **괄호**: 일반 괄호 `(` `)` 그대로 사용. LaTeX의 `\left(` `\right)`는 크기 자동 조절 지시자이므로 변환 시 제거하고 괄호만 남긴다.
+- **괄호**: 일반 괄호 `(` `)` 그대로 사용. LaTeX의 `\left(` `\right)`는 크기 자동 조절 지시자이므로 변환 시 `LEFT(`/`RIGHT)`로 변환한다.
 
 ## 변환 규칙 (LaTeX → 한글)
 
@@ -94,8 +111,42 @@ lambda  (t)= lambda  ` _{`0} +A _{1} sin( {2 pi } over {24} (t`-` phi  _{1} ))+A
 - **모델 사용법/전처리는 추측 금지**: 작동이 검증된 동일 모델 저자의 구현(Texo-web)을 그대로 따랐다. `VisionEncoderDecoderModel.from_pretrained(..., {dtype:'fp32'})` + 1채널 384×384 텐서를 3채널로 복제해 `model.generate`. 전처리(`app.js`의 `preprocessImage`)는 UniMERNet 규약(그레이스케일·색반전·여백크롭·중앙패딩·mean 0.7931/std 0.1738)을 따른다. 이 값/순서를 바꾸면 정확도가 떨어지므로 함부로 수정하지 말 것.
 - **검증**: 헤드리스 Chrome + matplotlib로 렌더한 수식 PNG로 E2E 인식·변환을 확인했다. (KaTeX는 헤드리스에서 웹폰트 글리프가 비어 OCR 테스트 이미지로 부적합 — 실제 렌더 이미지를 쓸 것.)
 
+## 파일 변환 (HWP / HWPX → 수식 개체 삽입)
+
+HWP 또는 HWPX 파일을 업로드하면 브라우저 안에서 LaTeX 수식을 한컴 수식 개체로 바꾼 새 HWPX 파일을 생성한다.
+
+### 동작 방식
+
+**HWPX 파일** (ZIP+XML 구조):
+1. `JSZip`으로 ZIP 해제
+2. `Contents/section*.xml`을 `DOMParser`로 파싱
+3. 텍스트 런(`hp:t`)에서 LaTeX 구간 탐지 — `$100$`처럼 숫자뿐인 달러 표기는 금액으로 보고 제외
+4. 각 구간을 `converter.js`(`window.LatexToHwp.convert`)로 한글 수식 script로 변환해 `<hp:equation>` 개체로 치환
+5. `XMLSerializer`로 직렬화 후 **중복 xmlns 선언 제거** → ZIP 재압축(mimetype은 첫 항목·비압축으로 보존)
+
+**HWP 파일** (이진 포맷):
+- HWP 이진 포맷은 직접 수정이 불가능하다. 오픈소스 엔진 [rhwp](https://github.com/edwardkim/rhwp)의 editor iframe(외부 URL, 인터넷 연결 필요)을 배경에서 불러와 `loadFile` → `exportHwpx`로 HWPX 변환 후, 위 HWPX 처리 흐름에 태운다.
+- 출력은 항상 HWPX 형식이다. HWP 파일이 필요하면 한컴 오피스에서 "다른 이름으로 저장"하면 된다.
+
+### 한글 경고 방지 — xmlns 중복 제거
+
+브라우저의 `XMLSerializer`는 `createElementNS()`로 생성한 요소마다 `xmlns:hp="..."` 선언을 인라인으로 중복 삽입한다. 한글 파서가 이를 손상된 구조로 인식해 "복구하였습니다" 경고를 띄울 수 있다.
+
+`src/hwpx-convert.js`의 `removeRedundantNsDecls()` 함수가 직렬화 후 첫 번째 선언만 남기고 중복을 모두 제거한다. `processSectionXml`의 직렬화 직후에 적용된다.
+
+### 참고한 오픈소스 프로젝트
+
+- [hwpx-latex-to-equation](https://github.com/fakeminjun7321/hwpx-latex-to-equation) — HWPX ZIP+XML 파싱 및 수식 개체 삽입 구조. `src/hwpx-convert.js`는 이 프로젝트를 기반으로 본 저장소에 통합한 것이다.
+- [rhwp](https://github.com/edwardkim/rhwp) — Rust+WASM 기반 HWP/HWPX 파서·에디터. HWP 이진 파일을 HWPX로 변환하는 데 활용한다.
+
+### 의존성
+
+- `vendor/jszip.min.js` — JSZip v3.10.1 (MIT). HWPX ZIP 해제·재압축에 사용. CDN 없이 동봉.
+- `src/hwpx-convert.js` — HWPX 처리 모듈. `window.HwpxConvert` 전역 노출.
+
 ## 개발 방침
 
 - 변환 로직은 순수 함수로 작성하고, 골든 테스트 케이스 모음을 함께 유지한다.
 - 외부 의존성은 최소로. 가능하면 추가하지 않는다.
 - 커밋/푸시는 사용자가 요청할 때만 한다.
+- `src/converter.js` 수정 시 `chrome-extension/lib/converter.js`도 함께 동기화한다.

@@ -201,7 +201,7 @@
       cursor: pointer;
     }
     .dropzone:focus-visible { outline: 2px solid var(--accent); }
-    .dropzone.dragover { border-color: var(--accent); background: rgba(47, 109, 246, 0.05); }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(47, 109, 246, 0.05); }
     .dropzone-icon { font-size: 2rem; line-height: 1; }
     .dropzone-text { margin: 6px 0 4px; font-size: 0.95rem; }
     .dropzone-sub { margin: 0; color: var(--muted); font-size: 0.8rem; }
@@ -227,6 +227,90 @@
       margin-left: 8px;
     }
     .ocr-progress > i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width 0.2s; }
+
+    /* ── 탭 ── */
+    .tab-nav {
+      display: flex;
+      gap: 4px;
+      background: var(--code-bg);
+      padding: 4px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 10px 16px;
+      border-radius: 9px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--muted);
+      transition: background 0.15s, color 0.15s, box-shadow 0.15s;
+    }
+    .tab-btn.active {
+      background: var(--card);
+      color: var(--accent);
+      box-shadow: 0 1px 5px rgba(0,0,0,0.10);
+    }
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 파일 변환 ── */
+    .file-drop {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .file-drop:hover, .file-drop.dragover {
+      border-color: var(--accent);
+      background: rgba(47,109,246,0.05);
+    }
+    .file-drop-icon { font-size: 2rem; line-height: 1; }
+    .file-drop-text { margin: 6px 0 4px; font-size: 0.95rem; }
+    .file-drop-sub { margin: 0; color: var(--muted); font-size: 0.8rem; }
+    .file-result { margin-top: 14px; }
+    /* 변환 결과 헤더: 체크 + 파일명 + 통계 한 줄 */
+    .conv-summary {
+      display: flex; align-items: center; gap: 9px;
+      padding: 11px 14px; border-radius: 9px; margin-bottom: 12px;
+      background: #e7f6ee; border: 1px solid #b2dfc7;
+    }
+    [data-theme="dark"] .conv-summary { background: #14301f; border-color: #1e5035; }
+    .conv-summary.no-eq { background: #fdf3df; border-color: #f0d08a; }
+    [data-theme="dark"] .conv-summary.no-eq { background: #2e2510; border-color: #5a4510; }
+    .conv-summary.err { background: #fdecea; border-color: #f5b8b4; }
+    [data-theme="dark"] .conv-summary.err { background: #331a18; border-color: #5a2820; }
+    .conv-check { font-size: 1.05rem; flex-shrink: 0; line-height: 1; }
+    .conv-fname { font-size: 0.88rem; font-weight: 600; color: var(--text); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .conv-meta { font-size: 0.78rem; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+    .dl-btn {
+      display: block; width: 100%; text-align: center; text-decoration: none;
+      background: var(--accent); color: #fff;
+      font-size: 1rem; font-weight: 700;
+      padding: 14px 20px; border-radius: 10px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .dl-btn:hover { background: var(--accent-hover); }
+    .dl-btn:active { transform: translateY(1px); }
+    .hwp-notice {
+      margin-top: 12px; padding: 12px 14px;
+      background: rgba(47,109,246,0.07);
+      border: 1px solid rgba(47,109,246,0.18);
+      border-radius: 9px; font-size: 0.83rem; color: var(--muted); line-height: 1.6;
+    }
+    .hwp-notice b { color: var(--text); }
+    .conv-spinner {
+      width: 14px; height: 14px;
+      border: 2px solid currentColor; border-right-color: transparent;
+      border-radius: 50%; display: inline-block;
+      animation: spin 0.7s linear infinite; vertical-align: -2px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── 경고·해결방안 모달 ── */
     .modal-overlay {
@@ -330,11 +414,16 @@
     .solutions-footer { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 18px; }
     .modal-close-btn { width: 100%; padding: 11px; }
 
-    /* 다크 모드 토글 (레이아웃 우측 상단) */
+    /* 다크 모드 토글 (레이아웃 우측 상단) — h1 첫 줄과 수직 중앙 정렬 */
     .theme-toggle {
       position: absolute;
       top: 32px;
       right: 20px;
+      /* h1 첫 줄 line-box(=font-size × line-height)와 동일한 높이를 갖도록 해서
+         flex로 트랙(24px)을 수직 중앙에 두면 h1 텍스트 중심과 정확히 맞춰진다. */
+      height: calc(1.6rem * 1.6);
+      display: flex;
+      align-items: center;
       z-index: 900;
       border: none;
       background: none;
@@ -392,6 +481,16 @@
       </div>
     </header>
 
+    <nav class="tab-nav" role="tablist">
+      <button class="tab-btn active" id="tabTextBtn" role="tab" aria-selected="true"
+        aria-controls="tabText" type="button">✏️ 텍스트 변환</button>
+      <button class="tab-btn" id="tabFileBtn" role="tab" aria-selected="false"
+        aria-controls="tabFile" type="button">📄 파일 변환 (HWP/HWPX)</button>
+    </nav>
+
+    <!-- ── 탭 1: 텍스트 변환 ── -->
+    <div class="tab-panel active" id="tabText" role="tabpanel">
+
     <div class="panel">
       <div class="label-row">
         <span class="label">이미지에서 수식 인식 (OCR · 브라우저에서 직접 처리)</span>
@@ -441,6 +540,46 @@
       변환 규칙은 한컴 공식 명세(한글 문서 파일 형식 - 수식, rev 1.2)를 참고했습니다 ·
       <a href="https://github.com/minigu5/latex-to-hwp" target="_blank" rel="noopener">GitHub</a>
     </footer>
+
+    </div><!-- /tabText -->
+
+    <!-- ── 탭 2: 파일 변환 ── -->
+    <div class="tab-panel" id="tabFile" role="tabpanel">
+
+      <div class="panel">
+        <div class="label-row">
+          <span class="label">HWP / HWPX 파일 업로드</span>
+        </div>
+        <div class="file-drop" id="fileDrop" tabindex="0" role="button"
+          aria-label="HWP 또는 HWPX 파일 선택">
+          <input type="file" id="fileInput" accept=".hwp,.hwpx" hidden />
+          <div class="file-drop-icon">📂</div>
+          <p class="file-drop-text">HWP/HWPX 파일을 끌어다 놓거나
+            <button type="button" class="btn ghost" id="pickFileBtn">파일 선택</button></p>
+          <p class="file-drop-sub">.hwp · .hwpx 지원 — 변환은 전부 브라우저에서 실행되며 서버로 전송되지 않습니다.</p>
+        </div>
+
+        <div class="file-result" id="fileResult" style="display:none"></div>
+      </div>
+
+      <div class="hwp-notice">
+        <b>동작 방식</b><br>
+        HWPX 파일은 ZIP+XML 구조로, 문서 안의 텍스트 LaTeX(<code>$…$</code>, <code>$$…$$</code>,
+        <code>\(…\)</code>, <code>\[…\]</code>)를 찾아 한컴 수식 개체(<code>hp:equation</code>)로
+        교체한 뒤 새 HWPX로 내보냅니다.<br>
+        HWP(이진) 파일은 <b>rhwp</b> 오픈소스 엔진(인터넷 연결 필요)으로 HWPX 변환 후 같은 방식으로 처리합니다.
+        <span id="hwpConvertingNote" style="display:none; color:var(--accent)">
+          — rhwp 엔진 로드 중, 잠시 기다려 주세요…</span>
+      </div>
+
+      <footer>
+        다음 프로젝트들을 참고했습니다 ·
+        <a href="https://github.com/fakeminjun7321/hwpx-latex-to-equation" target="_blank" rel="noopener">hwpx-latex-to-equation</a>
+        ·
+        <a href="https://github.com/edwardkim/rhwp" target="_blank" rel="noopener">rhwp</a>
+      </footer>
+
+    </div><!-- /tabFile -->
 
     <div class="credit">
       <p class="credit-main">Crafted by <span class="name">Shin Mingyu</span>
@@ -519,7 +658,9 @@
     </div>
   </div>
 
+  <script defer src="vendor/jszip.min.js"></script>
   <script defer src="src/converter.js"></script>
+  <script defer src="src/hwpx-convert.js"></script>
   <script defer src="app.js"></script>
   <script>
     /* 다크 모드 토글: 선택값을 localStorage에 저장. 기본값은 라이트 모드. */

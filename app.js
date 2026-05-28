@@ -661,5 +661,214 @@
   });
 
   render();
+
+  // ── 탭 전환 ──────────────────────────────────────────────────────────────
+  var tabTextBtn = document.getElementById('tabTextBtn');
+  var tabFileBtn = document.getElementById('tabFileBtn');
+  var tabTextPanel = document.getElementById('tabText');
+  var tabFilePanel = document.getElementById('tabFile');
+
+  function activateTab(which) {
+    var isFile = which === 'file';
+    tabTextBtn.classList.toggle('active', !isFile);
+    tabFileBtn.classList.toggle('active', isFile);
+    tabTextBtn.setAttribute('aria-selected', isFile ? 'false' : 'true');
+    tabFileBtn.setAttribute('aria-selected', isFile ? 'true' : 'false');
+    tabTextPanel.classList.toggle('active', !isFile);
+    tabFilePanel.classList.toggle('active', isFile);
+  }
+
+  if (tabTextBtn) tabTextBtn.addEventListener('click', function () { activateTab('text'); });
+  if (tabFileBtn) tabFileBtn.addEventListener('click', function () { activateTab('file'); });
+
+  // ── 파일 변환 (HWP / HWPX → 수식 개체 삽입) ──────────────────────────────
+  var fileDrop = document.getElementById('fileDrop');
+  var fileInputEl = document.getElementById('fileInput');
+  var pickFileBtn = document.getElementById('pickFileBtn');
+  var fileResultEl = document.getElementById('fileResult');
+  var hwpConvertingNote = document.getElementById('hwpConvertingNote');
+
+  var fileResultUrl = null;
+
+  function escHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function clearFileResult() {
+    if (fileResultUrl) { URL.revokeObjectURL(fileResultUrl); fileResultUrl = null; }
+    fileResultEl.innerHTML = '';
+    fileResultEl.style.display = 'none';
+  }
+
+  function showFileError(msg) {
+    fileResultEl.style.display = 'block';
+    fileResultEl.innerHTML =
+      '<div class="conv-summary err"><span class="conv-check">⚠</span><span class="conv-fname">' + escHtml(msg) + '</span></div>';
+  }
+
+  function showFileResult(blob, stats, filename) {
+    if (fileResultUrl) URL.revokeObjectURL(fileResultUrl);
+    fileResultUrl = URL.createObjectURL(blob);
+
+    var hasEq = stats.equations > 0;
+    var metaParts = ['수식 ' + stats.equations + '개 변환'];
+    if (stats.sectionsChanged > 0) metaParts.push('섹션 ' + stats.sectionsChanged + '개 수정');
+    if (stats.skippedNumericDollars > 0) metaParts.push('금액 ' + stats.skippedNumericDollars + '개 유지');
+
+    var html = '';
+    if (hasEq) {
+      html += '<div class="conv-summary">' +
+        '<span class="conv-check">✓</span>' +
+        '<span class="conv-fname">' + escHtml(filename) + '</span>' +
+        '<span class="conv-meta">' + metaParts.join(' · ') + '</span>' +
+        '</div>';
+      html += '<a class="dl-btn" href="' + fileResultUrl + '" download="' + escHtml(filename) + '">변환된 파일 다운로드</a>';
+    } else {
+      html += '<div class="conv-summary no-eq">' +
+        '<span class="conv-check">⚠</span>' +
+        '<span class="conv-fname">' + escHtml(filename) + '</span>' +
+        '<span class="conv-meta">변환할 LaTeX 수식 없음</span>' +
+        '</div>';
+    }
+
+    fileResultEl.innerHTML = html;
+    fileResultEl.style.display = 'block';
+  }
+
+  function runFileConvert(file) {
+    if (!file) return;
+    clearFileResult();
+
+    var isHwpx = /\.hwpx$/i.test(file.name);
+    var isHwp = /\.hwp$/i.test(file.name) && !isHwpx;
+
+    fileResultEl.style.display = 'block';
+    fileResultEl.innerHTML = '<div class="result-badge ok"><span class="conv-spinner"></span> 변환 중…</div>';
+
+    var convertPromise = isHwp
+      ? convertHwpViaRhwp(file)
+      : convertHwpx(file);
+
+    convertPromise
+      .then(function (out) { showFileResult(out.blob, out.stats, out.filename); })
+      .catch(function (err) { showFileError((err && err.message) ? err.message : String(err)); });
+  }
+
+  // HWPX 직접 변환 (hwpx-convert.js 사용)
+  function convertHwpx(file) {
+    return window.HwpxConvert.convertFile(file);
+  }
+
+  // HWP 이진 파일: rhwp editor iframe을 숨겨서 HWPX로 변환 후 처리
+  function convertHwpViaRhwp(file) {
+    var RHWP_URL = 'https://edwardkim.github.io/rhwp/';
+    if (hwpConvertingNote) hwpConvertingNote.style.display = 'inline';
+
+    return file.arrayBuffer().then(function (buf) {
+      return new Promise(function (resolve, reject) {
+        var iframe = document.createElement('iframe');
+        iframe.src = RHWP_URL;
+        iframe.style.cssText = 'position:fixed;top:-9999px;left:-9999px;width:1280px;height:900px;border:none;';
+        document.body.appendChild(iframe);
+
+        var reqId = 0;
+        var pending = new Map();
+
+        function sendRequest(method, params) {
+          return new Promise(function (res, rej) {
+            var id = ++reqId;
+            pending.set(id, { resolve: res, reject: rej });
+            iframe.contentWindow.postMessage({ type: 'rhwp-request', id: id, method: method, params: params || {} }, '*');
+            setTimeout(function () {
+              if (pending.has(id)) { pending.delete(id); rej(new Error('rhwp 응답 타임아웃: ' + method)); }
+            }, 30000);
+          });
+        }
+
+        function onMessage(e) {
+          if (e.data && e.data.type === 'rhwp-response' && e.data.id != null) {
+            var r = pending.get(e.data.id);
+            if (r) {
+              pending.delete(e.data.id);
+              if (e.data.error) r.reject(new Error(e.data.error));
+              else r.resolve(e.data.result);
+            }
+          }
+        }
+        window.addEventListener('message', onMessage);
+
+        function cleanup() {
+          window.removeEventListener('message', onMessage);
+          document.body.removeChild(iframe);
+          if (hwpConvertingNote) hwpConvertingNote.style.display = 'none';
+        }
+
+        iframe.addEventListener('load', function () {
+          sendRequest('ready')
+            .then(function () { return sendRequest('loadFile', { data: new Uint8Array(buf), fileName: file.name }); })
+            .then(function () { return sendRequest('exportHwpx'); })
+            .then(function (result) {
+              cleanup();
+              var hwpxBytes = result instanceof Uint8Array ? result : new Uint8Array(result);
+              var hwpxFile = new File(
+                [new Blob([hwpxBytes], { type: 'application/vnd.hancom.hwpx' })],
+                file.name.replace(/\.hwp$/i, '.hwpx'),
+                { type: 'application/vnd.hancom.hwpx' }
+              );
+              return window.HwpxConvert.convertFile(hwpxFile);
+            })
+            .then(resolve)
+            .catch(function (err) { cleanup(); reject(err); });
+        });
+      });
+    });
+  }
+
+  function onFileSelected(file) {
+    if (!file) return;
+    var isHwpx = /\.hwpx$/i.test(file.name);
+    var isHwp = /\.hwp$/i.test(file.name) && !isHwpx;
+    if (!isHwp && !isHwpx) {
+      clearFileResult();
+      fileResultEl.style.display = 'block';
+      fileResultEl.innerHTML = '<div class="result-badge err">⚠ HWP(.hwp) 또는 HWPX(.hwpx) 파일만 지원합니다.</div>';
+      return;
+    }
+    runFileConvert(file);
+  }
+
+  if (pickFileBtn) {
+    pickFileBtn.addEventListener('click', function (e) {
+      e.preventDefault(); e.stopPropagation();
+      if (fileInputEl) fileInputEl.click();
+    });
+  }
+
+  if (fileDrop) {
+    fileDrop.addEventListener('click', function (e) {
+      if (e.target === pickFileBtn) return;
+      if (fileInputEl) fileInputEl.click();
+    });
+    fileDrop.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); if (fileInputEl) fileInputEl.click(); }
+    });
+    fileDrop.addEventListener('dragover', function (e) { e.preventDefault(); fileDrop.classList.add('dragover'); });
+    fileDrop.addEventListener('dragleave', function () { fileDrop.classList.remove('dragover'); });
+    fileDrop.addEventListener('drop', function (e) {
+      e.preventDefault(); fileDrop.classList.remove('dragover');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      if (f) onFileSelected(f);
+    });
+  }
+
+  if (fileInputEl) {
+    fileInputEl.addEventListener('change', function () {
+      var f = fileInputEl.files && fileInputEl.files[0];
+      if (f) onFileSelected(f);
+      fileInputEl.value = '';
+    });
+  }
 })();
 
