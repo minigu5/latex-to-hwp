@@ -147,7 +147,7 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 
 | LaTeX | 한글 | | LaTeX | 한글 |
 |-------|------|---|-------|------|
-| `\cup` | `union` | | `\in` | `IN` |
+| `\cup` | `union` | | `\in` | `` ` IN ` `` (∈ 앞뒤 좁은 간격) |
 | `\cap` | `inter` | | `\ni` | `owns` |
 | `\bigcup` | `union` | | `\notin` | `notin` |
 | `\bigcap` | `inter` | | `\subset` | `subset` |
