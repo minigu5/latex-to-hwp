@@ -111,7 +111,7 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 
 **대문자**: `Alpha Beta Gamma Delta Epsilon Zeta Eta Theta Iota Kappa Lambda Mu Nu Xi Omicron Pi Rho Sigma Tau Upsilon Phi Chi Psi Omega`
 
-**변형(var)**: `\vartheta`→`vartheta`, `\varpi`→`varpi`, `\varsigma`→`varsigma`, `\varphi`→`varphi`, `\varepsilon`→`varepsilon`, (`\varupsilon`→`varupsilon`)
+**변형(var)**: `\vartheta`→`vartheta`, `\varpi`→`varpi`, `\varsigma`→`varsigma`, `\varphi`→`varphi`, `\varepsilon`→`varepsilon`, `\varupsilon`→`varupsilon`, `\varrho`→`varrho`
 
 > 한글에서 그리스 문자는 키워드이므로 뒤에 공백으로 항을 끊는다. 골든 예시 `lambda  (t)`처럼 키워드 뒤 공백이 붙는다.
 
@@ -136,7 +136,10 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 | `\odot` | `odot` | | `\ll` | `<<` |
 | `\oslash` | `oslash` | | `\gg` | `>>` |
 | `\vee`/`\lor` | `vee` | | `\not=` | `not =` (NOT) |
-| `\wedge`/`\land` | `wedge` | | `\degree` | `deg`/`DEG` |
+| `\wedge`/`\land` | `wedge` | | `\degree` | `DEG` |
+| `\diamond` | `diamond` | | `\asymp` | `ASYMP` |
+| `\triangledown` | `TRIANGLED` | | `\Im` | `IMAG` |
+| `\Re` | `REIMAGE` | | | |
 
 ---
 
@@ -144,14 +147,18 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 
 | LaTeX | 한글 | | LaTeX | 한글 |
 |-------|------|---|-------|------|
-| `\cup` | `union` | | `\in` | `in` |
+| `\cup` | `union` | | `\in` | `IN` |
 | `\cap` | `inter` | | `\ni` | `owns` |
 | `\bigcup` | `union` | | `\notin` | `notin` |
 | `\bigcap` | `inter` | | `\subset` | `subset` |
 | `\sqcap` | `sqcap` | | `\supset` | `supset` |
 | `\sqcup` | `sqcup` | | `\subseteq` | `subseteq` |
+| `\sqsubset` | `SQSUBSET` | | `\sqsupset` | `SQSUPSET` |
+| `\sqsubseteq` | `SQSUBSETEQ` | | `\sqsupseteq` | `SQSUPSETEQ` |
 | `\emptyset` | `emptyset` | | `\supseteq` | `supseteq` |
 | `\aleph` | `aleph` | | `\uplus` | `uplus` |
+| `\coprod` | `COPROD` | | `\lll` | `LLL` |
+| `\ggg` | `>>>` | | | |
 
 > 첨자 없는 작은 집합 기호는 명령 앞에 `SMALL` (예: `A SMALLUNION B`).
 
@@ -179,7 +186,7 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 |-------|------|---|-------|------|
 | `\infty` | `inf` | | `\partial` | `partial` |
 | `\forall` | `forall` | | `\exists` | `exist` |
-| `\nabla` | (명세 미확인) | | `\prime`/`'` | `prime` |
+| `\nabla` | `nabla` (동작 확인 필요) | | `\prime`/`'` | `prime` |
 | `\therefore` | `therefore` | | `\because` | `because` |
 | `\cdots` | `cdots` | | `\ldots`/`\dots` | `ldots` |
 | `\vdots` | `vdots` | | `\ddots` | `ddots` |
@@ -188,7 +195,10 @@ LaTeX accent → 한글 명령. 모두 `명령 글자` 형태 (예: `hat A`, 여
 | `\lnot`/`\neg` | `lnot` | | `\diamond` | `diamond` |
 | `\top` | `top` | | `\bot`/`\perp` | `bot` |
 | `\models` | `models` | | `\vdash` | `vdash` |
-| `^\circ`(도) | `circ` 또는 `DEG` | | `\AA`(옹스트롬) | `angstrom` |
+| `\degree` | `DEG` | | `\AA`(옹스트롬) | `ANGSTROM` |
+| `\ell` | `ELL` | | `\wp` | `WP` |
+| `\imath` | `IMATH` | | `\jmath` | `JMATH` |
+| `\hbar` | `hbar` | | | |
 
 ---
 
