@@ -12,5 +12,11 @@ node_modules/
 /chrome-extension/
 /chrome-extension.crx
 
+# 확장 프로그램 백업/배포 zip (chrome-extension 산출물 — 메인 저장소에 포함하지 않음)
+*.zip
+
+# 확장 프로그램 서브모듈/임시 흔적
+/_ext_temp
+
 # 개인 키 등 비밀 (확장 패키징 키 포함)
 *.pem
