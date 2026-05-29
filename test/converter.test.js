@@ -11,7 +11,7 @@ test('골든 예시 변환', () => {
   const input =
     '$$\\lambda(t) = \\lambda_0 + A_1 \\sin\\left(\\frac{2\\pi}{24}(t - \\phi_1)\\right) + A_2 \\sin\\left(\\frac{2\\pi}{12}(t - \\phi_2)\\right)$$';
   const expected =
-    'lambda ( t ) `=` lambda _{0} `+` A _{1} sin LEFT( {2 pi} over {24} ( t `-` phi _{1} ) RIGHT) `+` A _{2} sin LEFT( {2 pi} over {12} ( t `-` phi _{2} ) RIGHT)';
+    'lambda (t) `=` lambda _{0} `+` A _{1} sin LEFT( {2 pi} over {24} (t `-` phi _{1}) RIGHT) `+` A _{2} sin LEFT( {2 pi} over {12} (t `-` phi _{2}) RIGHT)';
   assert.strictEqual(convert(input), expected);
 });
 
@@ -141,7 +141,7 @@ test('\\boxed → {BOX{...}} 변환', () => {
   assert.strictEqual(convert('\\boxed{x}'), '{BOX{x}}');
   assert.strictEqual(
     convert('$$\\boxed{; N^*(t) = \\frac{\\lambda(t)}{\\mu} + \\frac{1}{\\mu}\\sqrt{\\frac{p \\lambda(t) \\mu}{c}} ;}$$'),
-    '{BOX{; N ^{*} ( t ) `=` {lambda ( t )} over {mu} `+` {1} over {mu} sqrt {{p lambda ( t ) mu} over {c}} ;}}'
+    '{BOX{; N ^{*} (t) `=` {lambda (t)} over {mu} `+` {1} over {mu} sqrt {{p lambda (t) mu} over {c}} ;}}'
   );
 });
 

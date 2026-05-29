@@ -497,7 +497,15 @@
   }
 
   function cleanup(s) {
-    return s.replace(/[ \t]+/g, ' ').trim();
+    s = s.replace(/[ \t]+/g, ' ').trim();
+    // 일반 괄호 `( ... )` 안의 양 끝 공백 제거. 예: `N ^{*} ( t )` → `N ^{*} (t)`.
+    // 한컴 수식 편집기에서 `(t)` 가 자연스럽고 `( t )` 는 의도와 다르게 보일 수 있다.
+    // `LEFT(` / `RIGHT)` 같은 키워드는 보존해야 하므로, 알파벳 대문자 뒤의 `(` 와
+    // 그 짝인 `)` 는 건드리지 않는다.
+    s = s.replace(/([^A-Z])\( +/g, '$1(');
+    s = s.replace(/^\( +/, '(');
+    s = s.replace(/ +\)/g, ')');
+    return s;
   }
 
   function convert(latex) {
