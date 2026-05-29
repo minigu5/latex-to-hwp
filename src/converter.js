@@ -496,6 +496,14 @@
     return s.trim();
   }
 
+  // AI 챗봇이 렌더링한 수식(예: ChatGPT 의 수식 박스)을 평문으로 복사하면
+  // 위첨자의 별표(*)가 떨어져 나가는 흔한 사고가 있다. `N^*(t)` 가 `N^(t)` 로
+  // 들어오면 수학적으로는 의미가 없는 패턴이므로(`^` 의 인자는 `(` 가 될 수 없다),
+  // 잃어버린 별표를 복원해 `N^{*}(t)` 로 해석한다.
+  function recoverLostStarSuperscript(s) {
+    return s.replace(/\^\(/g, '^{*}(');
+  }
+
   function cleanup(s) {
     s = s.replace(/[ \t]+/g, ' ').trim();
     // 일반 괄호 `( ... )` 안의 양 끝 공백 제거. 예: `N ^{*} ( t )` → `N ^{*} (t)`.
@@ -511,6 +519,7 @@
   function convert(latex) {
     if (!latex || !latex.trim()) return '';
     var body = stripDelimiters(latex);
+    body = recoverLostStarSuperscript(body);
     var tokens = tokenize(body);
     var pos = { i: 0 };
     var out = parseSeq(tokens, pos, null);
